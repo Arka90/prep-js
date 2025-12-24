@@ -152,8 +152,15 @@ export function getDayNumber(firstQuizDate: string | null): number {
   
   const first = new Date(firstQuizDate);
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - first.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Calculate difference in days, ensuring positive value only if now >= first
+  const diffTime = now.getTime() - first.getTime();
+  
+  // If the first quiz is in the future (shouldn't happen), return 1
+  if (diffTime < 0) return 1;
+  
+  // Use floor and add 1 to get day number (day 1 is the first day)
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
   
   return Math.max(1, diffDays);
 }

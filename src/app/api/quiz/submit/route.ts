@@ -100,10 +100,17 @@ export async function POST(request: NextRequest) {
       const newTotalPoints = user.total_points + points;
       const newLevel = calculateLevel(newTotalPoints);
       
-      // Check streak
-      const today = new Date().toDateString();
-      const lastQuizDate = user.last_quiz_date ? new Date(user.last_quiz_date).toDateString() : null;
-      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      // Check streak using UTC dates for consistency across timezones
+      const getUTCDateString = (date: Date) => {
+        return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
+      };
+      
+      const now = new Date();
+      const today = getUTCDateString(now);
+      const lastQuizDate = user.last_quiz_date 
+        ? getUTCDateString(new Date(user.last_quiz_date)) 
+        : null;
+      const yesterday = getUTCDateString(new Date(now.getTime() - 86400000));
       
       let newStreak = user.current_streak;
       if (lastQuizDate === today) {
