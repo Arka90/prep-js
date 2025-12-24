@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { 
-  PlayCircle, 
-  Flame, 
-  Trophy, 
-  Target, 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  PlayCircle,
+  Flame,
+  Trophy,
+  Target,
   TrendingUp,
   Clock,
-  AlertTriangle
-} from 'lucide-react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { StatCard } from '@/components/ui/StatCard';
-import { ProgressBar } from '@/components/ui/ProgressBar';
-import { LoadingSpinner } from '@/components/ui/Loading';
-import { useAuthStore } from '@/lib/store';
-import { formatTime, formatDate, getPointsForNextLevel } from '@/lib/quiz';
+  AlertTriangle,
+} from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { LoadingSpinner } from "@/components/ui/Loading";
+import { useAuthStore } from "@/lib/store";
+import { formatTime, formatDate, getPointsForNextLevel } from "@/lib/quiz";
 
 interface DashboardData {
   stats: {
@@ -46,10 +46,11 @@ export default function DashboardPage() {
   const { isAuthenticated, userId } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showStartQuizPopup, setShowStartQuizPopup] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
@@ -57,12 +58,12 @@ export default function DashboardPage() {
       try {
         const response = await fetch(`/api/user/stats?userId=${userId}`);
         const result = await response.json();
-        
+
         if (response.ok) {
           setData(result);
         }
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        console.error("Failed to fetch dashboard data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -102,7 +103,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -123,15 +124,14 @@ export default function DashboardPage() {
                 Challenge yourself with 10 AI-generated JavaScript questions
               </p>
             </div>
-            <Link href="/quiz">
-              <Button
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-white dark:text-blue-600 dark:hover:bg-blue-50"
-              >
-                <PlayCircle className="mr-2 h-5 w-5" />
-                Start Quiz
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-white dark:text-blue-600 dark:hover:bg-blue-500"
+              onClick={() => setShowStartQuizPopup(true)}
+            >
+              <PlayCircle className="mr-2 h-5 w-5" />
+              Start Quiz
+            </Button>
           </div>
         </Card>
 
@@ -205,10 +205,10 @@ export default function DashboardPage() {
                         <div
                           className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
                             quiz.score >= 8
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                               : quiz.score >= 5
-                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                           }`}
                         >
                           {quiz.score}/10
@@ -224,7 +224,9 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                         <Clock className="h-4 w-4" />
-                        <span className="text-sm">{formatTime(quiz.timeTaken)}</span>
+                        <span className="text-sm">
+                          {formatTime(quiz.timeTaken)}
+                        </span>
                       </div>
                     </Link>
                   ))}
@@ -260,7 +262,7 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                 )}
-                
+
                 {stats.strongestTopic && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                     <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
@@ -282,6 +284,57 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Start Quiz Confirmation Popup */}
+        {showStartQuizPopup && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-md w-full">
+              <div className="p-6">
+                <div className="text-center mb-4">
+                  <span className="text-5xl">🧠</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+                  Ready to Start?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
+                  Youre about to start a quiz with 10 AI-generated JavaScript
+                  questions.
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 mb-6 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-blue-500" />
+                    <span>20 minutes time limit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-blue-500" />
+                    <span>10 questions to answer</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-blue-500" />
+                    <span>Earn points and maintain your streak</span>
+                  </li>
+                </ul>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowStartQuizPopup(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => router.push("/quiz")}
+                    className="flex-1"
+                  >
+                    <PlayCircle className="mr-2 h-4 w-4" />
+                    Start Quiz
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   );

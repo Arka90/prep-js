@@ -1,18 +1,40 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Send, Loader2 } from 'lucide-react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { ProgressBar } from '@/components/ui/ProgressBar';
-import { LoadingOverlay } from '@/components/ui/Loading';
-import { QuizTimer } from '@/components/quiz/QuizTimer';
-import { QuestionCard } from '@/components/quiz/QuestionCard';
-import { QuestionNavigator } from '@/components/quiz/QuestionNavigator';
-import { useAuthStore, useQuizStore } from '@/lib/store';
-import { generateQuiz, getDayNumber } from '@/lib/quiz';
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  Loader2,
+  Calendar,
+  Clock,
+} from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { LoadingOverlay } from "@/components/ui/Loading";
+import { QuizTimer } from "@/components/quiz/QuizTimer";
+import { QuestionCard } from "@/components/quiz/QuestionCard";
+import { QuestionNavigator } from "@/components/quiz/QuestionNavigator";
+import { useAuthStore, useQuizStore } from "@/lib/store";
+import { generateQuiz } from "@/lib/quiz";
+
+interface TodayQuizStatus {
+  hasCompletedToday: boolean;
+  dayNumber: number;
+  todayQuiz: {
+    id: string;
+    score: number;
+    completedAt: string;
+    dayNumber: number;
+  } | null;
+  timeUntilNextQuiz: {
+    hours: number;
+    minutes: number;
+  } | null;
+}
 
 export default function QuizPage() {
   const router = useRouter();
@@ -39,61 +61,106 @@ export default function QuizPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [todayStatus, setTodayStatus] = useState<TodayQuizStatus | null>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+  const [currentDayNumber, setCurrentDayNumber] = useState(1);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isAuthenticated, router]);
+
+  // Check if user has already taken today's quiz
+  useEffect(() => {
+    const checkTodayStatus = async () => {
+      if (!userId || !isAuthenticated) {
+        setIsCheckingStatus(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/quiz/today?userId=${userId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setTodayStatus(data);
+          setCurrentDayNumber(data.dayNumber);
+        }
+      } catch (err) {
+        console.error("Failed to check today status:", err);
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+
+    checkTodayStatus();
+  }, [userId, isAuthenticated]);
 
   const startNewQuiz = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // For demo, use day 1
-      const dayNumber = getDayNumber(null);
-      const generatedQuestions = await generateQuiz(dayNumber);
-      
+      const generatedQuestions = await generateQuiz(currentDayNumber);
+
       setQuestions(generatedQuestions);
       setTimeRemaining(20 * 60); // 20 minutes
       setStartTime(Date.now());
     } catch (err) {
-      console.error('Failed to generate quiz:', err);
-      setError('Failed to generate quiz. Please try again.');
+      console.error("Failed to generate quiz:", err);
+      setError("Failed to generate quiz. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setQuestions, setTimeRemaining, setStartTime]);
+  }, [
+    setLoading,
+    setQuestions,
+    setTimeRemaining,
+    setStartTime,
+    currentDayNumber,
+  ]);
 
   useEffect(() => {
-    // Only generate quiz if we don't have questions yet
-    if (questions.length === 0 && !isLoading && isAuthenticated) {
+    // Only generate quiz if we don't have questions yet and haven't completed today's quiz
+    if (
+      questions.length === 0 &&
+      !isLoading &&
+      isAuthenticated &&
+      !isCheckingStatus &&
+      !todayStatus?.hasCompletedToday
+    ) {
       startNewQuiz();
     }
-  }, [questions.length, isLoading, isAuthenticated, startNewQuiz]);
+  }, [
+    questions.length,
+    isLoading,
+    isAuthenticated,
+    startNewQuiz,
+    isCheckingStatus,
+    todayStatus?.hasCompletedToday,
+  ]);
 
   const handleSubmit = useCallback(async () => {
     if (isSubmitting || !userId || !startTime) return;
-    
+
     setIsSubmitting(true);
     setShowConfirmSubmit(false);
 
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-    const dayNumber = getDayNumber(null);
 
     try {
-      const response = await fetch('/api/quiz/submit', {
-        method: 'POST',
+      const response = await fetch("/api/quiz/submit", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId,
           questions,
           answers,
           timeTaken,
-          dayNumber,
+          dayNumber: currentDayNumber,
         }),
       });
 
@@ -103,15 +170,24 @@ export default function QuizPage() {
         resetQuiz();
         router.push(`/quiz/results/${data.quizId}`);
       } else {
-        setError(data.error || 'Failed to submit quiz');
+        setError(data.error || "Failed to submit quiz");
         setIsSubmitting(false);
       }
     } catch (err) {
-      console.error('Submit error:', err);
-      setError('Failed to submit quiz. Please try again.');
+      console.error("Submit error:", err);
+      setError("Failed to submit quiz. Please try again.");
       setIsSubmitting(false);
     }
-  }, [isSubmitting, userId, startTime, questions, answers, resetQuiz, router]);
+  }, [
+    isSubmitting,
+    userId,
+    startTime,
+    questions,
+    answers,
+    resetQuiz,
+    router,
+    currentDayNumber,
+  ]);
 
   const handleTimeUp = useCallback(() => {
     handleSubmit();
@@ -123,6 +199,85 @@ export default function QuizPage() {
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Show loading while checking if user already took today's quiz
+  if (isCheckingStatus) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navbar />
+        <LoadingOverlay message="Checking your quiz status..." />
+      </div>
+    );
+  }
+
+  // Show "Come Back Tomorrow" popup if user already completed today's quiz
+  if (todayStatus?.hasCompletedToday) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-4 py-16">
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-center">
+              <span className="text-6xl">🌙</span>
+            </div>
+            <div className="p-6 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                You&apos;ve Already Completed Today&apos;s Quiz!
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Great job on Day {todayStatus.todayQuiz?.dayNumber}! You scored{" "}
+                <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  {todayStatus.todayQuiz?.score}/10
+                </span>
+              </p>
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
+                  <Clock className="h-5 w-5" />
+                  <span className="font-medium">Next quiz available in:</span>
+                </div>
+                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {todayStatus.timeUntilNextQuiz?.hours}h{" "}
+                  {todayStatus.timeUntilNextQuiz?.minutes}m
+                </div>
+              </div>
+
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center gap-2 text-indigo-700 dark:text-indigo-400 mb-1">
+                  <Calendar className="h-5 w-5" />
+                  <span className="font-medium">
+                    Tomorrow is Day {currentDayNumber + 1}
+                  </span>
+                </div>
+                <p className="text-sm text-indigo-600 dark:text-indigo-300">
+                  Come back tomorrow for new challenges!
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    router.push(`/quiz/results/${todayStatus.todayQuiz?.id}`)
+                  }
+                  className="flex-1"
+                >
+                  View Today&apos;s Results
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => router.push("/dashboard")}
+                  className="flex-1"
+                >
+                  Go to Dashboard
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -164,7 +319,7 @@ export default function QuizPage() {
   }
 
   const currentQuestion = questions[currentQuestionIndex];
-  const answeredCount = answers.filter((a) => a.trim() !== '').length;
+  const answeredCount = answers.filter((a) => a.trim() !== "").length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -179,7 +334,7 @@ export default function QuizPage() {
               onTimeUp={handleTimeUp}
               onTick={handleTick}
             />
-            
+
             <div className="flex-1 max-w-md">
               <ProgressBar
                 value={answeredCount}
@@ -271,11 +426,13 @@ export default function QuizPage() {
                 Submit Quiz?
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-2">
-                You have answered {answeredCount} of {questions.length} questions.
+                You have answered {answeredCount} of {questions.length}{" "}
+                questions.
               </p>
               {answeredCount < questions.length && (
                 <p className="text-yellow-600 dark:text-yellow-400 mb-4">
-                  ⚠️ {questions.length - answeredCount} questions are unanswered!
+                  ⚠️ {questions.length - answeredCount} questions are
+                  unanswered!
                 </p>
               )}
               <div className="flex gap-3 mt-6">
