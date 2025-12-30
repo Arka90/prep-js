@@ -1,7 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { calculateScore, calculatePoints, calculateLevel } from '@/lib/quiz';
+import { calculatePoints, calculateLevel } from '@/lib/quiz';
 import { QuizQuestion, AchievementType, User, TopicPerformance, QuizAttempt } from '@/types';
+
+/**
+ * Normalize answer for basic comparison
+ */
+function normalizeAnswer(answer: string): string {
+  return answer
+    .trim()
+    .toLowerCase()
+    .replace(/["'`]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\\n/g, '\n')
+    .replace(/\n/g, ' ')
+    .replace(/undefined/gi, 'undefined')
+    .replace(/null/gi, 'null')
+    .replace(/nan/gi, 'NaN')
+    .replace(/true/gi, 'true')
+    .replace(/false/gi, 'false');
+}
+
+/**
+ * Check if answers match with various normalizations
+ */
+function basicAnswerMatch(userAnswer: string, expectedOutput: string): boolean {
+  const normalizedUser = normalizeAnswer(userAnswer);
+  const normalizedExpected = normalizeAnswer(expectedOutput);
+  
+  // Direct match
+  if (normalizedUser === normalizedExpected) {
+    return true;
+  }
+  
+  // Try matching with newlines replaced by spaces
+  const userNoNewlines = normalizedUser.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const expectedNoNewlines = normalizedExpected.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  if (userNoNewlines === expectedNoNewlines) {
+    return true;
+  }
+  
+  // Try matching numbers/values as separate tokens
+  const userTokens = normalizedUser.split(/[\s,]+/).filter(t => t.length > 0);
+  const expectedTokens = normalizedExpected.split(/[\s,]+/).filter(t => t.length > 0);
+  
+  if (userTokens.length === expectedTokens.length && 
+      userTokens.every((t, i) => t === expectedTokens[i])) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Use AI to check if the answer is conceptually correct
+ */
+async function checkAnswerWithAI(
+  question: QuizQuestion,
+  userAnswer: string,
+  apiKey: string
+): Promise<boolean> {
+  const aiPrompt = `You are a JavaScript quiz answer checker. Determine if the user's answer is conceptually correct.
+
+Code snippet:
+\`\`\`javascript
+${question.code_snippet}
+\`\`\`
+
+Expected output: "${question.expected_output}"
+User's answer: "${userAnswer}"
+
+Rules:
+1. Accept minor formatting differences ("1\\n2" same as "1 2")
+2. Accept case variations for keywords
+3. The CONCEPT must be correct
+4. Be lenient with whitespace
+
+Respond with ONLY: {"isCorrect": true} or {"isCorrect": false}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4-turbo-preview',
+        messages: [{ role: 'user', content: aiPrompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0.1,
+        max_tokens: 50,
+      }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    const result = JSON.parse(content);
+    return result.isCorrect === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Calculate score using smart answer checking
+ */
+async function calculateScoreSmart(
+  questions: QuizQuestion[],
+  userAnswers: string[],
+  apiKey: string | undefined
+): Promise<{ score: number; correct: boolean[] }> {
+  const correct: boolean[] = [];
+  let score = 0;
+
+  for (let index = 0; index < questions.length; index++) {
+    const question = questions[index];
+    const userAnswer = (userAnswers[index] || '').trim();
+    
+    // First try basic matching
+    let isCorrect = basicAnswerMatch(userAnswer, question.expected_output);
+    
+    // If basic matching fails and we have an API key, try AI checking
+    if (!isCorrect && apiKey && userAnswer.length > 0) {
+      isCorrect = await checkAnswerWithAI(question, userAnswer, apiKey);
+    }
+    
+    correct.push(isCorrect);
+    if (isCorrect) score++;
+  }
+
+  return { score, correct };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +150,12 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerSupabaseClient();
+    
+    // Get OpenAI API key for smart answer checking
+    const apiKey = process.env.OPENAI_API_KEY;
 
-    // Calculate score
-    const { score, correct } = calculateScore(questions, answers);
+    // Calculate score using smart answer checking
+    const { score, correct } = await calculateScoreSmart(questions, answers, apiKey);
     const points = calculatePoints(score, timeTaken);
 
     // Save quiz attempt

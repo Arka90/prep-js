@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -36,6 +36,11 @@ interface TodayQuizStatus {
   } | null;
 }
 
+interface TargetSubtopic {
+  mainTopic: string;
+  subtopic: string;
+}
+
 export default function QuizPage() {
   const router = useRouter();
   const { isAuthenticated, userId } = useAuthStore();
@@ -64,6 +69,8 @@ export default function QuizPage() {
   const [todayStatus, setTodayStatus] = useState<TodayQuizStatus | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [currentDayNumber, setCurrentDayNumber] = useState(1);
+  // Store target subtopics for tracking after quiz completion
+  const targetSubtopicsRef = useRef<TargetSubtopic[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -102,11 +109,17 @@ export default function QuizPage() {
     setError(null);
 
     try {
-      const generatedQuestions = await generateQuiz(currentDayNumber);
+      // Pass userId to get targeted subtopics based on syllabus progress
+      const result = await generateQuiz(currentDayNumber, userId || undefined);
 
-      setQuestions(generatedQuestions);
+      setQuestions(result.questions);
       setTimeRemaining(20 * 60); // 20 minutes
       setStartTime(Date.now());
+      
+      // Store target subtopics for tracking after quiz completion
+      if (result.targetSubtopics) {
+        targetSubtopicsRef.current = result.targetSubtopics;
+      }
     } catch (err) {
       console.error("Failed to generate quiz:", err);
       setError("Failed to generate quiz. Please try again.");
@@ -119,6 +132,7 @@ export default function QuizPage() {
     setTimeRemaining,
     setStartTime,
     currentDayNumber,
+    userId,
   ]);
 
   useEffect(() => {
@@ -167,6 +181,25 @@ export default function QuizPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Mark the target subtopics as covered for syllabus tracking
+        if (targetSubtopicsRef.current.length > 0) {
+          try {
+            await fetch("/api/syllabus", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId,
+                subtopics: targetSubtopicsRef.current,
+              }),
+            });
+          } catch (syllabusError) {
+            // Don't block quiz completion for syllabus tracking errors
+            console.error("Failed to track subtopics:", syllabusError);
+          }
+        }
+        
         resetQuiz();
         router.push(`/quiz/results/${data.quizId}`);
       } else {

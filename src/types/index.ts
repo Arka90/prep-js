@@ -46,6 +46,14 @@ export interface Achievement {
   unlocked_at: string;
 }
 
+export interface CoveredSubtopic {
+  id: string;
+  user_id: string;
+  main_topic: string;
+  subtopic: string;
+  covered_at: string;
+}
+
 export type AchievementType = 
   | 'perfect_score'
   | 'speed_demon'
@@ -172,6 +180,11 @@ export interface Database {
         Row: Achievement;
         Insert: Omit<Achievement, 'id'>;
         Update: Partial<Achievement>;
+      };
+      covered_subtopics: {
+        Row: CoveredSubtopic;
+        Insert: Omit<CoveredSubtopic, 'id'>;
+        Update: Partial<CoveredSubtopic>;
       };
     };
   };
