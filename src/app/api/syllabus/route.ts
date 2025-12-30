@@ -108,20 +108,17 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerSupabaseClient();
 
-    // Insert covered subtopics (ignore duplicates)
-    for (const { mainTopic, subtopic } of subtopics) {
-      await supabase
-        .from('covered_subtopics')
-        .upsert(
-          {
-            user_id: userId,
-            main_topic: mainTopic,
-            subtopic: subtopic,
-            covered_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,main_topic,subtopic' }
-        );
-    }
+    // Batch insert covered subtopics (ignore duplicates)
+    const records = subtopics.map(({ mainTopic, subtopic }) => ({
+      user_id: userId,
+      main_topic: mainTopic,
+      subtopic: subtopic,
+      covered_at: new Date().toISOString(),
+    }));
+
+    await supabase
+      .from('covered_subtopics')
+      .upsert(records, { onConflict: 'user_id,main_topic,subtopic' });
 
     return NextResponse.json({ success: true });
   } catch (error) {
