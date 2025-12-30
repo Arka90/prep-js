@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "description": "JavaScript interview preparation syllabus with detailed sub-topics",
+  "topics": {
+    "Closures": [
+      "Understanding lexical scope and closures",
+      "Closures with loops and setTimeout",
+      "Private variables using closures",
+      "Memory considerations with closures",
+      "Closures in callbacks and event handlers",
+      "IIFE and closure combination",
+      "Closure with function factories",
+      "Closures in module pattern"
+    ],
+    "Hoisting": [
+      "Variable hoisting with var",
+      "Function declaration hoisting",
+      "Function expression hoisting behavior",
+      "let and const temporal dead zone",
+      "Hoisting order: functions vs variables",
+      "Hoisting in nested scopes",
+      "Class hoisting behavior",
+      "Hoisting with default parameters"
+    ],
+    "The this Keyword": [
+      "this in global context",
+      "this in object methods",
+      "this with call, apply, bind",
+      "this in arrow functions",
+      "this in event handlers",
+      "this in callbacks",
+      "this with new keyword",
+      "this in strict mode vs non-strict"
+    ],
+    "Type Coercion": [
+      "String to number coercion",
+      "Boolean coercion rules",
+      "Equality with null and undefined",
+      "Object to primitive conversion",
+      "Array to primitive coercion",
+      "Plus operator type coercion",
+      "Comparison operator coercion",
+      "typeof and coercion edge cases"
+    ],
+    "Prototypes and Inheritance": [
+      "Prototype chain lookup",
+      "__proto__ vs prototype",
+      "Object.create and prototypes",
+      "hasOwnProperty vs in operator",
+      "Prototype pollution risks",
+      "Class inheritance and super",
+      "Extending built-in objects",
+      "instanceof operator behavior"
+    ],
+    "Event Loop and Asynchronous Execution": [
+      "Call stack and execution context",
+      "Microtasks vs macrotasks",
+      "setTimeout vs setImmediate",
+      "Promise resolution order",
+      "async/await execution order",
+      "queueMicrotask behavior",
+      "Event loop with I/O operations",
+      "requestAnimationFrame timing"
+    ],
+    "Scope (Lexical vs Block)": [
+      "Function scope with var",
+      "Block scope with let/const",
+      "Scope chain resolution",
+      "Variable shadowing",
+      "Scope in switch statements",
+      "Scope in for loops",
+      "Scope with try-catch",
+      "Module scope behavior"
+    ],
+    "Equality Operators (== vs ===)": [
+      "Type coercion in == comparison",
+      "Strict equality with objects",
+      "NaN equality behavior",
+      "null == undefined behavior",
+      "Array equality comparisons",
+      "Object reference equality",
+      "Comparing primitives vs wrappers",
+      "Edge cases with empty values"
+    ],
+    "Arrow Functions": [
+      "Arrow function this binding",
+      "Arrow functions and arguments object",
+      "Arrow functions as methods",
+      "Arrow function implicit return",
+      "Arrow functions in callbacks",
+      "Arrow functions and new keyword",
+      "Arrow functions in prototypes",
+      "Arrow function hoisting behavior"
+    ],
+    "Truthy/Falsy Values": [
+      "Complete list of falsy values",
+      "Empty array and object truthiness",
+      "String and number edge cases",
+      "Boolean constructor behavior",
+      "Double negation conversion",
+      "Logical operators short-circuit",
+      "Nullish coalescing vs OR",
+      "Optional chaining behavior"
+    ],
+    "Operator Precedence and Associativity": [
+      "Arithmetic operator precedence",
+      "Logical operator precedence",
+      "Assignment operator associativity",
+      "Ternary operator chaining",
+      "Comma operator behavior",
+      "typeof and delete precedence",
+      "Increment/decrement behavior",
+      "Grouping and evaluation order"
+    ],
+    "Array and Object Behaviors": [
+      "Array mutation methods",
+      "Array.sort comparison function",
+      "Array sparse vs dense",
+      "Object property ordering",
+      "Object.keys vs for...in",
+      "Array/Object destructuring",
+      "Spread operator behavior",
+      "Reference vs value copy"
+    ],
+    "IIFEs": [
+      "Basic IIFE syntax and execution",
+      "IIFE for private scope",
+      "IIFE with parameters",
+      "IIFE in loops",
+      "IIFE vs block scope",
+      "Async IIFE patterns",
+      "IIFE return values",
+      "Named IIFE behavior"
+    ],
+    "Promises and Async/Await": [
+      "Promise constructor behavior",
+      "Promise.then chaining",
+      "Promise.all and Promise.race",
+      "Promise error handling",
+      "async function return value",
+      "await with non-promise values",
+      "Error handling with try-catch",
+      "Promise.allSettled behavior"
+    ],
+    "Strict Mode": [
+      "Strict mode syntax errors",
+      "this in strict mode functions",
+      "Silent failures to errors",
+      "Duplicate parameter names",
+      "with statement restriction",
+      "delete on variables",
+      "Reserved words as variables",
+      "Strict mode in modules"
+    ]
+  }
+}

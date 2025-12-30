@@ -1,5 +1,10 @@
 import { QuizQuestion } from '@/types';
 
+interface TargetSubtopic {
+  mainTopic: string;
+  subtopic: string;
+}
+
 const OPENAI_PROMPT = `You are a JavaScript interview question generator specializing in tricky input-output puzzles. These questions test core JS concepts through code snippets where candidates predict the console output, revealing subtle behaviors like hoisting or coercion.
 
 Topics to draw from exclusively (cycle through them evenly, but mix as needed for variety):
@@ -28,13 +33,49 @@ Rules for generation:
 
 Generate for Day {day_number}.`;
 
-export async function generateQuiz(dayNumber: number): Promise<QuizQuestion[]> {
+const OPENAI_PROMPT_WITH_TOPICS = `You are a JavaScript interview question generator specializing in tricky input-output puzzles. These questions test core JS concepts through code snippets where candidates predict the console output, revealing subtle behaviors like hoisting or coercion.
+
+IMPORTANT: Generate questions specifically covering these concepts that the user has NOT practiced before:
+{target_subtopics}
+
+Rules for generation:
+1. Generate exactly 10 NEW and UNIQUE questions focused on the specified concepts above.
+2. Each question format: Code snippet (<15 lines) + "What is the output?" + Expected output + Brief explanation
+3. Difficulty distribution based on DAY NUMBER {day_number}:
+   - Days 1-7: 5 easy, 3 medium, 2 hard
+   - Days 8-14: 2 easy, 4 medium, 4 hard
+   - Days 15+: 1 easy, 2 medium, 7 hard
+4. Label each question with topic and difficulty (e.g., "1. Closures (Easy):")
+5. Vary environments: Mix ES5/ES6+, strict/non-strict mode
+6. Make sure questions are creative and test deep understanding, not just basic knowledge
+7. Return response as valid JSON with structure:
+   {
+     "questions": [
+       {
+         "question_number": 1,
+         "topic": "Closures",
+         "difficulty": "Easy",
+         "code_snippet": "...",
+         "expected_output": "...",
+         "explanation": "..."
+       }
+     ]
+   }
+
+Generate for Day {day_number} using the specified concepts.`;
+
+export interface GeneratedQuizResult {
+  questions: QuizQuestion[];
+  targetSubtopics?: TargetSubtopic[];
+}
+
+export async function generateQuiz(dayNumber: number, userId?: string): Promise<GeneratedQuizResult> {
   const response = await fetch('/api/quiz/generate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ dayNumber }),
+    body: JSON.stringify({ dayNumber, userId }),
   });
 
   if (!response.ok) {
@@ -42,11 +83,27 @@ export async function generateQuiz(dayNumber: number): Promise<QuizQuestion[]> {
   }
 
   const data = await response.json();
-  return data.questions;
+  return {
+    questions: data.questions,
+    targetSubtopics: data.targetSubtopics,
+  };
 }
 
 export function getOpenAIPrompt(dayNumber: number): string {
   return OPENAI_PROMPT.replace(/{day_number}/g, String(dayNumber));
+}
+
+export function getOpenAIPromptWithTopics(
+  dayNumber: number,
+  targetSubtopics: TargetSubtopic[]
+): string {
+  const subtopicsList = targetSubtopics
+    .map(t => `- ${t.mainTopic}: ${t.subtopic}`)
+    .join('\n');
+  
+  return OPENAI_PROMPT_WITH_TOPICS
+    .replace(/{day_number}/g, String(dayNumber))
+    .replace(/{target_subtopics}/g, subtopicsList);
 }
 
 export function calculateScore(

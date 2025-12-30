@@ -48,17 +48,29 @@ CREATE TABLE IF NOT EXISTS achievements (
   UNIQUE(user_id, achievement_type)
 );
 
+-- Covered sub-topics tracking table
+CREATE TABLE IF NOT EXISTS covered_subtopics (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  main_topic TEXT NOT NULL,
+  subtopic TEXT NOT NULL,
+  covered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, main_topic, subtopic)
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_user_id ON quiz_attempts(user_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_completed_at ON quiz_attempts(completed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_topic_performance_user_id ON topic_performance(user_id);
 CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_covered_subtopics_user_id ON covered_subtopics(user_id);
 
 -- Row Level Security (RLS) policies
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE topic_performance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE covered_subtopics ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write for now (single-user app)
 -- In production, you may want more restrictive policies
@@ -66,6 +78,7 @@ CREATE POLICY "Allow all operations on users" ON users FOR ALL USING (true);
 CREATE POLICY "Allow all operations on quiz_attempts" ON quiz_attempts FOR ALL USING (true);
 CREATE POLICY "Allow all operations on topic_performance" ON topic_performance FOR ALL USING (true);
 CREATE POLICY "Allow all operations on achievements" ON achievements FOR ALL USING (true);
+CREATE POLICY "Allow all operations on covered_subtopics" ON covered_subtopics FOR ALL USING (true);
 
 -- Insert a default user with a hashed access key
 -- The default access key is: "prepjs2024" 
