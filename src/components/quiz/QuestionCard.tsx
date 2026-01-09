@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Prism from "prismjs";
-import "prismjs/components/prism-javascript";
 import { QuizQuestion } from "@/types";
+import { CodeSnippet } from "@/components/ui/CodeSnippet";
 
 interface QuestionCardProps {
   question: QuizQuestion;
@@ -24,14 +22,6 @@ export function QuestionCard({
   isMarkedForReview,
   onToggleReview,
 }: QuestionCardProps) {
-  const codeRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (codeRef.current) {
-      Prism.highlightElement(codeRef.current);
-    }
-  }, [question.code_snippet]);
-
   const difficultyColors = {
     Easy: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     Medium:
@@ -88,11 +78,7 @@ export function QuestionCard({
         <p className="text-gray-700 dark:text-gray-300 mb-4 font-medium">
           What is the output of the following code?
         </p>
-        <pre className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-          <code ref={codeRef} className="language-javascript text-sm">
-            {question.code_snippet.replace(/\\n/g, "\n")}
-          </code>
-        </pre>
+        <CodeSnippet code={question.code_snippet} />
       </div>
 
       {/* Answer Input */}

@@ -129,15 +129,49 @@ export function calculateScore(
   return { score, correct };
 }
 
-function normalizeAnswer(answer: string): string {
-  // Remove quotes, extra spaces, and common variations
+
+export function normalizeAnswer(answer: string): string {
   return answer
+    .trim()
+    .toLowerCase()
     .replace(/["'`]/g, '')
     .replace(/\s+/g, ' ')
+    .replace(/\\n/g, '\n')
+    .replace(/\n/g, ' ')
     .replace(/undefined/gi, 'undefined')
     .replace(/null/gi, 'null')
-    .replace(/NaN/gi, 'NaN')
-    .trim();
+    .replace(/nan/gi, 'NaN')
+    .replace(/true/gi, 'true')
+    .replace(/false/gi, 'false');
+}
+
+export function basicAnswerMatch(userAnswer: string, expectedOutput: string): boolean {
+  const normalizedUser = normalizeAnswer(userAnswer);
+  const normalizedExpected = normalizeAnswer(expectedOutput);
+  
+  // Direct match
+  if (normalizedUser === normalizedExpected) {
+    return true;
+  }
+  
+  // Try matching with newlines replaced by spaces
+  const userNoNewlines = normalizedUser.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const expectedNoNewlines = normalizedExpected.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  if (userNoNewlines === expectedNoNewlines) {
+    return true;
+  }
+  
+  // Try matching numbers/values as separate tokens
+  const userTokens = normalizedUser.split(/[\s,]+/).filter(t => t.length > 0);
+  const expectedTokens = normalizedExpected.split(/[\s,]+/).filter(t => t.length > 0);
+  
+  if (userTokens.length === expectedTokens.length && 
+      userTokens.every((t, i) => t === expectedTokens[i])) {
+    return true;
+  }
+  
+  return false;
 }
 
 export function calculatePoints(score: number, timeTaken: number): number {
@@ -202,6 +236,11 @@ export function formatDate(dateString: string): string {
     month: 'short',
     day: 'numeric',
   });
+}
+
+export function formatCodeSnippet(code: string): string {
+  // Replace literal \n with actual newlines
+  return code.replace(/\\n/g, '\n');
 }
 
 export function getDayNumber(firstQuizDate: string | null): number {

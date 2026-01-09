@@ -2,56 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { calculatePoints, calculateLevel } from '@/lib/quiz';
 import { QuizQuestion, AchievementType, User, TopicPerformance, QuizAttempt } from '@/types';
+import { normalizeAnswer, basicAnswerMatch } from '@/lib/quiz';
 
-/**
- * Normalize answer for basic comparison
- */
-function normalizeAnswer(answer: string): string {
-  return answer
-    .trim()
-    .toLowerCase()
-    .replace(/["'`]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/\\n/g, '\n')
-    .replace(/\n/g, ' ')
-    .replace(/undefined/gi, 'undefined')
-    .replace(/null/gi, 'null')
-    .replace(/nan/gi, 'NaN')
-    .replace(/true/gi, 'true')
-    .replace(/false/gi, 'false');
-}
-
-/**
- * Check if answers match with various normalizations
- */
-function basicAnswerMatch(userAnswer: string, expectedOutput: string): boolean {
-  const normalizedUser = normalizeAnswer(userAnswer);
-  const normalizedExpected = normalizeAnswer(expectedOutput);
-  
-  // Direct match
-  if (normalizedUser === normalizedExpected) {
-    return true;
-  }
-  
-  // Try matching with newlines replaced by spaces
-  const userNoNewlines = normalizedUser.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  const expectedNoNewlines = normalizedExpected.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  
-  if (userNoNewlines === expectedNoNewlines) {
-    return true;
-  }
-  
-  // Try matching numbers/values as separate tokens
-  const userTokens = normalizedUser.split(/[\s,]+/).filter(t => t.length > 0);
-  const expectedTokens = normalizedExpected.split(/[\s,]+/).filter(t => t.length > 0);
-  
-  if (userTokens.length === expectedTokens.length && 
-      userTokens.every((t, i) => t === expectedTokens[i])) {
-    return true;
-  }
-  
-  return false;
-}
+// Answer matching logic moved to @/lib/quiz
 
 /**
  * Use AI to check if the answer is conceptually correct

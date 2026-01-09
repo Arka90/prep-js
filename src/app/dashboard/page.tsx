@@ -187,10 +187,16 @@ export default function DashboardPage() {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
           {/* Recent Quizzes */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Recent Quizzes</CardTitle>
+              <Link href="/quiz/history">
+                <Button variant="ghost" size="sm">
+                  See All
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent>
               {data?.recentQuizzes && data.recentQuizzes.length > 0 ? (
@@ -241,8 +247,14 @@ export default function DashboardPage() {
 
           {/* Topics Overview */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Topics Overview</CardTitle>
+              <Link href="/quiz/mistakes">
+                <Button variant="outline" size="sm" className="text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Mistakes
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

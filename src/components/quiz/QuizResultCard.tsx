@@ -1,9 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import Prism from 'prismjs';
-import 'prismjs/components/prism-javascript';
 import { QuizQuestion } from '@/types';
+import { CodeSnippet } from '@/components/ui/CodeSnippet';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 interface QuizResultCardProps {
@@ -19,14 +17,6 @@ export function QuizResultCard({
   userAnswer,
   isCorrect,
 }: QuizResultCardProps) {
-  const codeRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (codeRef.current) {
-      Prism.highlightElement(codeRef.current);
-    }
-  }, [question.code_snippet]);
-
   const difficultyColors = {
     Easy: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     Medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -84,11 +74,7 @@ export function QuizResultCard({
 
       {/* Code Snippet */}
       <div className="px-6 py-4">
-        <pre className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-          <code ref={codeRef} className="language-javascript text-sm">
-            {question.code_snippet}
-          </code>
-        </pre>
+        <CodeSnippet code={question.code_snippet} />
       </div>
 
       {/* Answers */}
