@@ -186,6 +186,20 @@ export interface Database {
         Insert: Omit<CoveredSubtopic, 'id'>;
         Update: Partial<CoveredSubtopic>;
       };
+      revision_items: {
+        Row: RevisionItem;
+        Insert: Omit<RevisionItem, 'id' | 'created_at'>;
+        Update: Partial<RevisionItem>;
+      };
     };
   };
+} 
+
+export interface RevisionItem {
+  id: string;
+  user_id: string;
+  question: QuizQuestion;
+  user_answer: string;
+  created_at: string;
+  notes?: string;
 }

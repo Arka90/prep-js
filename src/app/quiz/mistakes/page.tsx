@@ -11,6 +11,8 @@ import {
   Code as CodeIcon,
   ChevronDown,
   ChevronUp,
+  Search,
+  BookOpen,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -65,6 +67,32 @@ export default function MistakesPage() {
     setExpandedId(expandedId === id ? null : id);
   };
 
+  const handleMarkRevision = async (item: MistakeItem) => {
+    try {
+      if (!isAuthenticated || !userId) return;
+
+      const response = await fetch("/api/revision/mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          question: item.question,
+          userAnswer: item.userAnswer,
+        }),
+      });
+
+      if (response.ok) {
+        // Optionally show toast or change button state locally
+        // For now we'll just alert or could add local state to disable button
+        alert("Marked for revision!");
+      } else {
+        console.error("Failed to mark for revision");
+      }
+    } catch (error) {
+      console.error("Error marking for revision:", error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -81,54 +109,72 @@ export default function MistakesPage() {
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Learn from Mistakes
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Learning from Mistakes
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Review concepts you missed to improve your skills
+            <p className="text-gray-600 dark:text-gray-400">
+              Review questions you missed to strengthen your understanding.
             </p>
           </div>
+          <Link href="/dashboard">
+            <Button variant="outline">Back to Dashboard</Button>
+          </Link>
         </div>
 
-        <div className="space-y-4">
-          {mistakes.length > 0 ? (
-            mistakes.map((item) => (
-              <Card
+        {mistakes.length === 0 ? (
+          <Card className="p-8 text-center">
+            <div className="text-4xl mb-4">🎉</div>
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+              No mistakes found!
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              You haven't made any mistakes in your quizzes yet. Keep up the great work!
+            </p>
+            <Link href="/quiz">
+              <Button>Take a Quiz</Button>
+            </Link>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {mistakes.map((item) => (
+              <div
                 key={item.id}
-                className="overflow-hidden border-l-4 border-l-red-500"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md"
               >
                 <div
-                  className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="p-6 cursor-pointer"
                   onClick={() => toggleExpand(item.id)}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-4">
-                      <div className="mt-1">
-                        <AlertCircle className="h-5 w-5 text-red-500" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium">
+                          Mistake
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatDate(item.date)} • Day {item.dayNumber}
+                        </span>
+                        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs font-medium">
+                          {item.question.topic}
+                        </span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                            {item.question.topic}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDate(item.date)}
-                          </span>
-                        </div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          Day {item.dayNumber} Quiz Question
-                        </h3>
-                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        Question {item.question.question_number}
+                      </h3>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
+                       <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkRevision(item);
+                        }}
+                      >
+                         Example Revise
+                      </Button>
                       {expandedId === item.id ? (
                         <ChevronUp className="h-5 w-5 text-gray-400" />
                       ) : (
@@ -139,7 +185,7 @@ export default function MistakesPage() {
                 </div>
 
                 {expandedId === item.id && (
-                  <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-4 sm:p-6">
+                  <div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                       <div className="mb-6">
                         <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                           <CodeIcon className="h-4 w-4" />
@@ -150,57 +196,57 @@ export default function MistakesPage() {
 
                     {/* Comparison */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30">
-                        <div className="flex items-center gap-2 mb-2 text-red-700 dark:text-red-400 font-medium">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2 text-sm font-medium text-red-700 dark:text-red-400">
                           <XCircle className="h-4 w-4" />
                           Your Answer
                         </div>
-                        <p className="font-mono text-sm text-gray-900 dark:text-gray-200 break-words">
-                          {item.userAnswer || "(No answer provided)"}
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/30">
-                        <div className="flex items-center gap-2 mb-2 text-green-700 dark:text-green-400 font-medium">
-                          <CheckCircle className="h-4 w-4" />
-                          Correct Answer
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg p-3 font-mono text-sm text-red-800 dark:text-red-200">
+                          {item.userAnswer || "(no answer)"}
                         </div>
-                        <p className="font-mono text-sm text-gray-900 dark:text-gray-200 break-words">
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-2 text-sm font-medium text-green-700 dark:text-green-400">
+                          <CheckCircle className="h-4 w-4" />
+                          Expected Output
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30 rounded-lg p-3 font-mono text-sm text-green-800 dark:text-green-200">
                           {item.question.expected_output}
-                        </p>
+                        </div>
                       </div>
                     </div>
 
                     {/* Explanation */}
-                    <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
-                      <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Explanation
                       </h4>
-                      <p className="text-blue-800 dark:text-blue-200 text-sm leading-relaxed">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                         {item.question.explanation}
                       </p>
                     </div>
+
+                    {/* Actions */}
+                    <div className="mt-6 flex justify-end gap-3">
+                       <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                           e.stopPropagation(); // Prevent collapse
+                           handleMarkRevision(item);
+                        }}
+                      >
+                         <BookOpen className="mr-2 h-4 w-4" />
+                         Mark for Revision
+                      </Button>
+                    </div>
                   </div>
                 )}
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-4">
-                <CheckCircle className="h-8 w-8" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No mistakes found!
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-                Great job! You haven't made any mistakes in your recent quizzes.
-                Keep up the good work!
-              </p>
-              <Link href="/quiz">
-                <Button className="mt-6">Take another quiz</Button>
-              </Link>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
+
       </main>
     </div>
   );

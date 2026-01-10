@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Clock,
   AlertTriangle,
+  AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
@@ -247,14 +249,22 @@ export default function DashboardPage() {
 
           {/* Topics Overview */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle>Topics Overview</CardTitle>
-              <Link href="/quiz/mistakes">
-                <Button variant="outline" size="sm" className="text-xs">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Mistakes
-                </Button>
-              </Link>
+              <div className="flex gap-3 mt-4">
+                <Link href="/quiz/mistakes" className="flex-1">
+                  <Button variant="outline" className="w-full">
+                    <AlertCircle className="mr-2 h-4 w-4 text-red-500" />
+                    Mistakes
+                  </Button>
+                </Link>
+                <Link href="/revision" className="flex-1">
+                  <Button variant="outline" className="w-full">
+                    <BookOpen className="mr-2 h-4 w-4 text-blue-500" />
+                    Revision
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
