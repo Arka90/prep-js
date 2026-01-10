@@ -1,4 +1,5 @@
 import { QuizQuestion } from '@/types';
+import { formatJavaScript } from '@/lib/formatting';
 
 interface TargetSubtopic {
   mainTopic: string;
@@ -13,13 +14,14 @@ Closures, Hoisting, The this Keyword, Type Coercion, Prototypes and Inheritance,
 Rules for generation:
 1. Generate exactly 10 NEW questions. Never repeat questions from previous attempts.
 2. Each question format: Code snippet (<15 lines) + "What is the output?" + Expected output + Brief explanation
-3. Difficulty distribution based on DAY NUMBER {day_number}:
+3. IMPORTANT: Provide the code snippet properly formatted with newlines and indentation. DO NOT minify the code.
+4. Difficulty distribution based on DAY NUMBER {day_number}:
    - Days 1-7: 5 easy, 3 medium, 2 hard
    - Days 8-14: 2 easy, 4 medium, 4 hard
    - Days 15+: 1 easy, 2 medium, 7 hard
-4. Label each question with topic and difficulty (e.g., "1. Closures (Easy):")
-5. Vary environments: Mix ES5/ES6+, strict/non-strict mode
-6. Return response as valid JSON array with structure:
+5. Label each question with topic and difficulty (e.g., "1. Closures (Easy):")
+6. Vary environments: Mix ES5/ES6+, strict/non-strict mode
+7. Return response as valid JSON array with structure:
    [
      {
        "question_number": 1,
@@ -41,14 +43,15 @@ IMPORTANT: Generate questions specifically covering these concepts that the user
 Rules for generation:
 1. Generate exactly 10 NEW and UNIQUE questions focused on the specified concepts above.
 2. Each question format: Code snippet (<15 lines) + "What is the output?" + Expected output + Brief explanation
-3. Difficulty distribution based on DAY NUMBER {day_number}:
+3. IMPORTANT: Provide the code snippet properly formatted with newlines and indentation. DO NOT minify the code.
+4. Difficulty distribution based on DAY NUMBER {day_number}:
    - Days 1-7: 5 easy, 3 medium, 2 hard
    - Days 8-14: 2 easy, 4 medium, 4 hard
    - Days 15+: 1 easy, 2 medium, 7 hard
-4. Label each question with topic and difficulty (e.g., "1. Closures (Easy):")
-5. Vary environments: Mix ES5/ES6+, strict/non-strict mode
-6. Make sure questions are creative and test deep understanding, not just basic knowledge
-7. Return response as valid JSON with structure:
+5. Label each question with topic and difficulty (e.g., "1. Closures (Easy):")
+6. Vary environments: Mix ES5/ES6+, strict/non-strict mode
+7. Make sure questions are creative and test deep understanding, not just basic knowledge
+8. Return response as valid JSON with structure:
    {
      "questions": [
        {
@@ -239,8 +242,7 @@ export function formatDate(dateString: string): string {
 }
 
 export function formatCodeSnippet(code: string): string {
-  // Replace literal \n with actual newlines
-  return code.replace(/\\n/g, '\n');
+  return formatJavaScript(code);
 }
 
 export function getDayNumber(firstQuizDate: string | null): number {
