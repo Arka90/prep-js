@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { calculatePoints, calculateLevel } from '@/lib/quiz';
 import { QuizQuestion, AchievementType, User, TopicPerformance, QuizAttempt } from '@/types';
 import { normalizeAnswer, basicAnswerMatch } from '@/lib/quiz';
+import { generateFlashcardFromMistake } from '@/lib/flashcards';
 
 // Answer matching logic moved to @/lib/quiz
 
@@ -176,6 +177,20 @@ export async function POST(request: NextRequest) {
           last_updated: new Date().toISOString(),
         });
       }
+    }
+
+    // Generate Flashcards for incorrect answers (Async - don't block response if possible, but Vercel serverless might kill it so we await)
+    // In a real production app, use a queue (QStash/Inngest). For MVP, we await or Promise.all.
+    if (apiKey) {
+        const flashcardPromises = (questions as QuizQuestion[]).map((q, index) => {
+            if (!correct[index]) {
+                return generateFlashcardFromMistake(q, answers[index], userId, apiKey);
+            }
+            return Promise.resolve(false);
+        });
+        
+        // We catch errors inside generateFlashcardFromMistake so this shouldn't fail the request
+        await Promise.all(flashcardPromises);
     }
 
     // Get user and update stats

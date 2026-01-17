@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Moon,
-  Sun
+  Sun,
+  Brain
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore, useThemeStore } from '@/lib/store';
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/quiz', label: 'Start Quiz', icon: PlayCircle },
+  { href: '/flashcards', label: 'Flashcards', icon: Brain },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/profile', label: 'Profile', icon: User },
 ];

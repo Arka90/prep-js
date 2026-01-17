@@ -191,6 +191,16 @@ export interface Database {
         Insert: Omit<RevisionItem, 'id' | 'created_at'>;
         Update: Partial<RevisionItem>;
       };
+      flashcards: {
+        Row: Flashcard;
+        Insert: Omit<Flashcard, 'id' | 'created_at' | 'last_reviewed_at'>;
+        Update: Partial<Flashcard>;
+      };
+      flashcard_reviews: {
+        Row: FlashcardReview;
+        Insert: Omit<FlashcardReview, 'id' | 'reviewed_at'>;
+        Update: Partial<FlashcardReview>;
+      };
     };
   };
 } 
@@ -202,4 +212,40 @@ export interface RevisionItem {
   user_answer: string;
   created_at: string;
   notes?: string;
+}
+
+export type FlashcardType = 'misconception_breaker' | 'prediction' | 'contrast' | 'edge_case';
+export type FlashcardStatus = 'new' | 'reviewing' | 'validated' | 'mastered';
+export type FlashcardConfidence = 'not_confident' | 'somewhat_confident' | 'confident';
+
+export interface Flashcard {
+  id: string;
+  user_id: string;
+  topic: string;
+  concept_name: string;
+  concept_description: string | null;
+  front_content: {
+    code_snippet?: string;
+    question_text: string;
+    options?: string[];
+  };
+  back_content: {
+    explanation: string;
+    correct_mental_model: string;
+    expected_output?: string;
+  };
+  card_type: FlashcardType;
+  status: FlashcardStatus;
+  confidence_level: number;
+  next_review_at: string;
+  last_reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface FlashcardReview {
+  id: string;
+  flashcard_id: string;
+  user_id: string;
+  rating: FlashcardConfidence;
+  reviewed_at: string;
 }
