@@ -32,10 +32,19 @@ export async function GET(
       );
     }
 
-    const quiz = quizData as QuizAttempt;
+    const quiz = quizData as QuizAttempt & { manual_corrections?: number[] };
 
     // Recalculate correct answers
     const { correct } = calculateScore(quiz.questions, quiz.user_answers);
+
+    // Apply manual corrections
+    if (quiz.manual_corrections) {
+      quiz.manual_corrections.forEach(index => {
+        if (index >= 0 && index < correct.length) {
+          correct[index] = true;
+        }
+      });
+    }
 
     return NextResponse.json({
       quiz: {

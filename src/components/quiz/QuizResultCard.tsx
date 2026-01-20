@@ -9,6 +9,7 @@ interface QuizResultCardProps {
   questionNumber: number;
   userAnswer: string;
   isCorrect: boolean;
+  onMarkCorrect?: () => void;
 }
 
 export function QuizResultCard({
@@ -16,6 +17,7 @@ export function QuizResultCard({
   questionNumber,
   userAnswer,
   isCorrect,
+  onMarkCorrect,
 }: QuizResultCardProps) {
   const difficultyColors = {
     Easy: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -70,6 +72,14 @@ export function QuizResultCard({
         >
           {isCorrect ? 'Correct!' : 'Incorrect'}
         </span>
+        {!isCorrect && onMarkCorrect && (
+            <button
+              onClick={onMarkCorrect}
+              className="ml-2 px-3 py-1 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Mark as Correct
+            </button>
+        )}
       </div>
 
       {/* Code Snippet */}

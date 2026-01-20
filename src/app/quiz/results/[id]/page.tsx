@@ -59,6 +59,34 @@ export default function QuizResultsPage({
     fetchQuizResults();
   }, [id, isAuthenticated, router]);
 
+  const handleMarkCorrect = async (questionIndex: number) => {
+    try {
+      const response = await fetch('/api/quiz/mark-correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quizId: id, questionIndex }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local state
+        setQuiz(prev => {
+          if (!prev) return null;
+          const newCorrect = [...prev.correct];
+          newCorrect[questionIndex] = true;
+          return {
+            ...prev,
+            score: data.newScore,
+            correct: newCorrect,
+          };
+        });
+      }
+    } catch (error) {
+      console.error('Failed to mark as correct:', error);
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -225,6 +253,7 @@ export default function QuizResultsPage({
               questionNumber={index + 1}
               userAnswer={quiz.user_answers[index]}
               isCorrect={quiz.correct[index]}
+              onMarkCorrect={() => handleMarkCorrect(index)}
             />
           ))}
         </div>

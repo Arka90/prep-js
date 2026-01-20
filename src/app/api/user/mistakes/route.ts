@@ -40,8 +40,14 @@ export async function GET(request: NextRequest) {
     quizAttempts.forEach(attempt => {
       const questions = attempt.questions as QuizQuestion[];
       const userAnswers = attempt.user_answers || [];
+      const manualCorrections = attempt.manual_corrections || []; // Get manual corrections
 
       questions.forEach((question, index) => {
+        // Skip if manually marked as correct
+        if (manualCorrections.includes(index)) {
+            return;
+        }
+
         const userAnswer = userAnswers[index] || '';
         const isCorrect = basicAnswerMatch(userAnswer, question.expected_output);
 
@@ -54,6 +60,7 @@ export async function GET(request: NextRequest) {
             mistakes.push({
               id: `${attempt.id}-${index}`,
               quizId: attempt.id,
+              questionIndex: index, // Add questionIndex for marking correct
               date: attempt.completed_at,
               dayNumber: attempt.day_number,
               question: question,

@@ -28,6 +28,7 @@ export interface QuizAttempt {
   time_taken: number; // seconds
   completed_at: string;
   created_at: string;
+  manual_corrections?: number[];
 }
 
 export interface TopicPerformance {

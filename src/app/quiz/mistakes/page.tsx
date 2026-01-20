@@ -26,6 +26,7 @@ import { QuizQuestion } from "@/types";
 interface MistakeItem {
   id: string;
   quizId: string;
+  questionIndex: number; // Added from API
   date: string;
   dayNumber: number;
   question: QuizQuestion;
@@ -83,13 +84,31 @@ export default function MistakesPage() {
 
       if (response.ok) {
         // Optionally show toast or change button state locally
-        // For now we'll just alert or could add local state to disable button
         alert("Marked for revision!");
       } else {
         console.error("Failed to mark for revision");
       }
     } catch (error) {
       console.error("Error marking for revision:", error);
+    }
+  };
+
+  const handleMarkCorrect = async (item: MistakeItem) => {
+    try {
+      const response = await fetch('/api/quiz/mark-correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quizId: item.quizId, questionIndex: item.questionIndex }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove the mistake from the list locally since it's now correct
+        setMistakes(prev => prev.filter(m => m.id !== item.id));
+      }
+    } catch (error) {
+       console.error('Failed to mark as correct:', error);
     }
   };
 
@@ -238,6 +257,18 @@ export default function MistakesPage() {
                       >
                          <BookOpen className="mr-2 h-4 w-4" />
                          Mark for Revision
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           handleMarkCorrect(item);
+                        }}
+                      >
+                         <CheckCircle className="mr-2 h-4 w-4" />
+                         Mark as Correct
                       </Button>
                     </div>
                   </div>
