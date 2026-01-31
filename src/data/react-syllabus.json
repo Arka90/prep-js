@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "description": "React interview preparation syllabus with detailed sub-topics",
+  "topics": {
+    "JSX and Elements": [
+      "JSX syntax and expressions",
+      "JSX vs createElement",
+      "Conditional rendering in JSX",
+      "Lists and keys in JSX",
+      "JSX spreading props",
+      "Fragments and shorthand syntax",
+      "JSX children and composition",
+      "Comments in JSX"
+    ],
+    "Components and Props": [
+      "Function vs class components",
+      "Props validation with PropTypes",
+      "Default props",
+      "Children props pattern",
+      "Render props pattern",
+      "Higher-order components",
+      "Component composition",
+      "Pure components"
+    ],
+    "State and Lifecycle": [
+      "useState hook basics",
+      "State updates and batching",
+      "Functional state updates",
+      "Component lifecycle phases",
+      "useLayoutEffect vs useEffect",
+      "State initialization patterns",
+      "Derived state anti-patterns",
+      "Lifting state up"
+    ],
+    "Hooks": [
+      "Rules of hooks",
+      "useState deep dive",
+      "Custom hooks creation",
+      "Hook dependencies",
+      "useReducer for complex state",
+      "Hooks composition patterns",
+      "Hook cleanup functions",
+      "Stale closure problems"
+    ],
+    "useEffect and Side Effects": [
+      "Effect execution timing",
+      "Dependency array behavior",
+      "Cleanup functions",
+      "Race conditions in effects",
+      "Fetching data with useEffect",
+      "Event listeners in effects",
+      "Subscriptions and cleanup",
+      "Effect vs lifecycle methods"
+    ],
+    "useCallback and useMemo": [
+      "Memoization concepts",
+      "useCallback use cases",
+      "useMemo for expensive calculations",
+      "When to memoize",
+      "Reference equality checks",
+      "Memoization with dependencies",
+      "Over-memoization anti-patterns",
+      "React.memo with callbacks"
+    ],
+    "useRef and DOM Manipulation": [
+      "Refs to DOM elements",
+      "Refs for mutable values",
+      "useRef vs createRef",
+      "Forwarding refs",
+      "Imperative handle pattern",
+      "Callback refs",
+      "Ref cleanup patterns",
+      "Focus management with refs"
+    ],
+    "Context API": [
+      "createContext and Provider",
+      "useContext hook",
+      "Context value updates",
+      "Multiple contexts pattern",
+      "Context performance concerns",
+      "Context vs prop drilling",
+      "Dynamic context values",
+      "Context with reducers"
+    ],
+    "React Router": [
+      "Route configuration",
+      "Dynamic route parameters",
+      "Nested routes",
+      "Programmatic navigation",
+      "Route guards and protection",
+      "URL search params",
+      "Route loading states",
+      "Error boundaries with routing"
+    ],
+    "Component Patterns": [
+      "Container/Presentational pattern",
+      "Compound components",
+      "Controlled vs uncontrolled inputs",
+      "Render props pattern",
+      "Custom hook extraction",
+      "State reducer pattern",
+      "Provider pattern",
+      "Slot pattern"
+    ],
+    "Performance Optimization": [
+      "React.memo usage",
+      "useMemo and useCallback",
+      "Virtualization for lists",
+      "Code splitting with lazy",
+      "Suspense for loading states",
+      "Avoiding unnecessary renders",
+      "Key prop optimization",
+      "Bundle size optimization"
+    ],
+    "Error Boundaries": [
+      "Error boundary class components",
+      "getDerivedStateFromError",
+      "componentDidCatch usage",
+      "Error boundary placement",
+      "Fallback UI patterns",
+      "Error recovery strategies",
+      "Error boundaries with async",
+      "Custom error boundary hooks"
+    ],
+    "Portals and Fragments": [
+      "Portal creation and usage",
+      "Modal implementation with portals",
+      "Event bubbling in portals",
+      "Fragment syntax options",
+      "Keyed fragments",
+      "Portals for tooltips",
+      "Portals accessibility",
+      "Multiple portal roots"
+    ],
+    "Controlled vs Uncontrolled Components": [
+      "Controlled input pattern",
+      "Uncontrolled with defaultValue",
+      "Form handling strategies",
+      "File inputs handling",
+      "Checkbox and radio groups",
+      "Select element patterns",
+      "Form libraries integration",
+      "Validation patterns"
+    ],
+    "Virtual DOM and Reconciliation": [
+      "Virtual DOM concept",
+      "Diffing algorithm basics",
+      "Reconciliation process",
+      "Key prop importance",
+      "Component identity",
+      "Fiber architecture basics",
+      "Batching updates",
+      "Concurrent features"
+    ],
+    "Redux and State Management": [
+      "Redux core concepts",
+      "Actions and reducers",
+      "useSelector and useDispatch",
+      "Redux middleware",
+      "Redux Toolkit basics",
+      "Normalized state shape",
+      "Selector patterns",
+      "Async actions with thunks"
+    ],
+    "Testing React Components": [
+      "Testing Library basics",
+      "User event simulation",
+      "Async testing patterns",
+      "Mocking modules and hooks",
+      "Snapshot testing",
+      "Testing custom hooks",
+      "Integration testing",
+      "Accessibility testing"
+    ],
+    "Server-Side Rendering": [
+      "SSR vs CSR concepts",
+      "Hydration process",
+      "getServerSideProps pattern",
+      "Static generation",
+      "Streaming SSR",
+      "Server components",
+      "SEO with SSR",
+      "Data fetching strategies"
+    ]
+  }
+}

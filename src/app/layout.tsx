@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { AuthProvider } from "@/components/layout/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PrepJS - JavaScript Interview Quiz App",
-  description: "AI-powered JavaScript interview preparation with quizzes, progress tracking, and detailed analytics",
+  description:
+    "AI-powered JavaScript interview preparation with quizzes, progress tracking, and detailed analytics",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
@@ -32,14 +34,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
         <ThemeProvider>
-          {children}
+          <AuthProvider>{children}</AuthProvider>
           <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#1F2937',
-                color: '#F9FAFB',
+                background: "#1F2937",
+                color: "#F9FAFB",
               },
             }}
           />

@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   AlertCircle,
   BookOpen,
+  Atom,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
@@ -43,26 +44,51 @@ interface DashboardData {
   }[];
 }
 
+interface ReactDashboardData {
+  stats: {
+    totalQuizzes: number;
+    averageScore: number;
+    bestScore: number;
+  };
+  recentQuizzes: {
+    id: string;
+    score: number;
+    time_taken: number;
+    completed_at: string;
+    day_number: number;
+  }[];
+}
+
 export default function DashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, userId } = useAuthStore();
+  const { userId } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [reactData, setReactData] = useState<ReactDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showStartQuizPopup, setShowStartQuizPopup] = useState(false);
+  const [showStartReactQuizPopup, setShowStartReactQuizPopup] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+    if (!userId) return;
 
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch(`/api/user/stats?userId=${userId}`);
-        const result = await response.json();
+        const [jsResponse, reactResponse] = await Promise.all([
+          fetch(`/api/user/stats?userId=${userId}`),
+          fetch(`/api/react-quiz/history?userId=${userId}`),
+        ]);
 
-        if (response.ok) {
+        if (jsResponse.ok) {
+          const result = await jsResponse.json();
           setData(result);
+        }
+
+        if (reactResponse.ok) {
+          const reactResult = await reactResponse.json();
+          setReactData({
+            stats: reactResult.stats,
+            recentQuizzes: reactResult.quizzes?.slice(0, 5) || [],
+          });
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -72,11 +98,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboardData();
-  }, [isAuthenticated, userId, router]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
+  }, [userId]);
 
   if (isLoading) {
     return (
@@ -137,6 +159,29 @@ export default function DashboardPage() {
           </div>
         </Card>
 
+        {/* React Quiz CTA */}
+        <Card className="mb-8 bg-gradient-to-r from-cyan-500 to-blue-600 border-0">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-white">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Atom className="h-6 w-6" />
+                React Quiz
+              </h2>
+              <p className="text-cyan-100 mt-1">
+                Test your React knowledge with AI-generated MCQ questions
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="bg-white text-cyan-600 hover:bg-cyan-50 dark:bg-white dark:text-cyan-600 dark:hover:bg-cyan-500"
+              onClick={() => setShowStartReactQuizPopup(true)}
+            >
+              <Atom className="mr-2 h-5 w-5" />
+              Start React Quiz
+            </Button>
+          </div>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
@@ -189,7 +234,6 @@ export default function DashboardPage() {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
           {/* Recent Quizzes */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -215,8 +259,8 @@ export default function DashboardPage() {
                             quiz.score >= 8
                               ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                               : quiz.score >= 5
-                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                           }`}
                         >
                           {quiz.score}/10
@@ -247,6 +291,69 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Recent React Quizzes */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Atom className="h-5 w-5 text-cyan-500" />
+                Recent React Quizzes
+              </CardTitle>
+              <Link href="/react-quiz/history">
+                <Button variant="ghost" size="sm">
+                  See All
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {reactData?.recentQuizzes &&
+              reactData.recentQuizzes.length > 0 ? (
+                <div className="space-y-3">
+                  {reactData.recentQuizzes.map((quiz) => (
+                    <Link
+                      key={quiz.id}
+                      href={`/react-quiz/results/${quiz.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                            quiz.score >= 8
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : quiz.score >= 5
+                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          }`}
+                        >
+                          {quiz.score}/10
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            Day {quiz.day_number}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(quiz.completed_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm">
+                          {formatTime(quiz.time_taken)}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No React quizzes taken yet. Start your first React quiz!
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           {/* Topics Overview */}
           <Card>
             <CardHeader>
@@ -351,6 +458,56 @@ export default function DashboardPage() {
                   >
                     <PlayCircle className="mr-2 h-4 w-4" />
                     Start Quiz
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Start React Quiz Confirmation Popup */}
+        {showStartReactQuizPopup && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-md w-full">
+              <div className="p-6">
+                <div className="text-center mb-4">
+                  <Atom className="h-16 w-16 text-cyan-500 mx-auto" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+                  Ready for React?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
+                  You&apos;re about to start a quiz with 10 AI-generated React
+                  questions.
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 mb-6 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-cyan-500" />
+                    <span>20 minutes time limit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-cyan-500" />
+                    <span>10 multiple choice questions</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-cyan-500" />
+                    <span>Test hooks, components, state & more</span>
+                  </li>
+                </ul>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowStartReactQuizPopup(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => router.push("/react-quiz")}
+                    className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                  >
+                    <Atom className="mr-2 h-4 w-4" />
+                    Start React Quiz
                   </Button>
                 </div>
               </div>

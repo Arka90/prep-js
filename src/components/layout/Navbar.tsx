@@ -1,29 +1,31 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  Home, 
-  PlayCircle, 
-  BarChart3, 
-  User, 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Home,
+  PlayCircle,
+  BarChart3,
+  User,
   LogOut,
   Menu,
   X,
   Moon,
   Sun,
-  Brain
-} from 'lucide-react';
-import { useState } from 'react';
-import { useAuthStore, useThemeStore } from '@/lib/store';
-import { Button } from '@/components/ui/Button';
+  Brain,
+  Atom,
+} from "lucide-react";
+import { useState } from "react";
+import { useAuthStore, useThemeStore } from "@/lib/store";
+import { Button } from "@/components/ui/Button";
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/quiz', label: 'Start Quiz', icon: PlayCircle },
-  { href: '/flashcards', label: 'Flashcards', icon: Brain },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
+  { href: "/quiz", label: "JS Quiz", icon: PlayCircle },
+  { href: "/react-quiz", label: "React Quiz", icon: Atom },
+  { href: "/flashcards", label: "Flashcards", icon: Brain },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function Navbar() {
@@ -34,7 +36,7 @@ export function Navbar() {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   return (
@@ -61,9 +63,10 @@ export function Navbar() {
                   href={item.href}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
-                    ${isActive 
-                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
-                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    ${
+                      isActive
+                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                     }
                   `}
                 >
@@ -81,9 +84,13 @@ export function Navbar() {
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
               aria-label="Toggle theme"
             >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isDarkMode ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </button>
-            
+
             <Button
               variant="ghost"
               onClick={handleLogout}
@@ -98,7 +105,11 @@ export function Navbar() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
             >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -117,9 +128,10 @@ export function Navbar() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-                    ${isActive 
-                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
-                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    ${
+                      isActive
+                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                     }
                   `}
                 >

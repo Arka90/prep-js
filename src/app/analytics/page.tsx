@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  TrendingUp, 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  TrendingUp,
   TrendingDown,
   Trophy,
   Target,
   Flame,
-  Award
-} from 'lucide-react';
+  Award,
+  Code,
+  Atom,
+} from "lucide-react";
 import {
   LineChart,
   Line,
@@ -21,13 +23,18 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-} from 'recharts';
-import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { StatCard } from '@/components/ui/StatCard';
-import { LoadingSpinner } from '@/components/ui/Loading';
-import { useAuthStore } from '@/lib/store';
-import { ACHIEVEMENTS, AchievementInfo, Achievement } from '@/types';
+} from "recharts";
+import { Navbar } from "@/components/layout/Navbar";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
+import { LoadingSpinner } from "@/components/ui/Loading";
+import { useAuthStore } from "@/lib/store";
+import {
+  ACHIEVEMENTS,
+  AchievementInfo,
+  Achievement,
+  REACT_ACHIEVEMENTS,
+} from "@/types";
 
 interface AnalyticsData {
   stats: {
@@ -52,37 +59,68 @@ interface AnalyticsData {
   }[];
 }
 
+interface ReactAnalyticsData {
+  stats: {
+    totalQuizzes: number;
+    averageScore: number;
+    bestScore: number;
+    weakestTopic: string | null;
+    strongestTopic: string | null;
+  };
+  scoreHistory: {
+    date: string;
+    score: number;
+  }[];
+  topicStats: {
+    topic: string;
+    totalAttempts: number;
+    correctAttempts: number;
+    accuracy: number;
+  }[];
+}
+
+type TabType = "javascript" | "react";
+
 export default function AnalyticsPage() {
   const router = useRouter();
   const { isAuthenticated, userId } = useAuthStore();
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>("javascript");
+  const [jsData, setJsData] = useState<AnalyticsData | null>(null);
+  const [reactData, setReactData] = useState<ReactAnalyticsData | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
     const fetchData = async () => {
       try {
-        const [statsResponse, achievementsResponse] = await Promise.all([
-          fetch(`/api/user/stats?userId=${userId}`),
-          fetch(`/api/user/achievements?userId=${userId}`),
-        ]);
+        const [statsResponse, achievementsResponse, reactStatsResponse] =
+          await Promise.all([
+            fetch(`/api/user/stats?userId=${userId}`),
+            fetch(`/api/user/achievements?userId=${userId}`),
+            fetch(`/api/user/react-stats?userId=${userId}`),
+          ]);
 
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
-          setData(statsData);
+          setJsData(statsData);
         }
 
         if (achievementsResponse.ok) {
           const achievementsData = await achievementsResponse.json();
           setAchievements(achievementsData.achievements);
         }
+
+        if (reactStatsResponse.ok) {
+          const reactStatsData = await reactStatsResponse.json();
+          setReactData(reactStatsData);
+        }
       } catch (error) {
-        console.error('Failed to fetch analytics:', error);
+        console.error("Failed to fetch analytics:", error);
       } finally {
         setIsLoading(false);
       }
@@ -106,7 +144,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  const stats = data?.stats || {
+  const jsStats = jsData?.stats || {
     totalQuizzes: 0,
     averageScore: 0,
     bestScore: 0,
@@ -117,26 +155,95 @@ export default function AnalyticsPage() {
     strongestTopic: null,
   };
 
+  const reactStats = reactData?.stats || {
+    totalQuizzes: 0,
+    averageScore: 0,
+    bestScore: 0,
+    weakestTopic: null,
+    strongestTopic: null,
+  };
+
   // Format score history for chart
-  const chartData = data?.scoreHistory?.map((item) => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    score: item.score,
-  })) || [];
+  const jsChartData =
+    jsData?.scoreHistory?.map((item) => ({
+      date: new Date(item.date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      score: item.score,
+    })) || [];
+
+  const reactChartData =
+    reactData?.scoreHistory?.map((item) => ({
+      date: new Date(item.date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      score: item.score,
+    })) || [];
 
   // Sort topic stats by accuracy for bar chart
-  const topicChartData = [...(data?.topicStats || [])].sort((a, b) => b.accuracy - a.accuracy);
+  const jsTopicChartData = [...(jsData?.topicStats || [])].sort(
+    (a, b) => b.accuracy - a.accuracy,
+  );
+  const reactTopicChartData = [...(reactData?.topicStats || [])].sort(
+    (a, b) => b.accuracy - a.accuracy,
+  );
 
   // Get unlocked achievement info
-  const unlockedAchievementTypes = achievements.map(a => a.achievement_type);
+  const unlockedAchievementTypes = achievements.map((a) => a.achievement_type);
+
+  // Current active data based on tab
+  const stats = activeTab === "javascript" ? jsStats : reactStats;
+  const chartData = activeTab === "javascript" ? jsChartData : reactChartData;
+  const topicChartData =
+    activeTab === "javascript" ? jsTopicChartData : reactTopicChartData;
+  const accentColor = activeTab === "javascript" ? "#3B82F6" : "#06B6D4";
+  const achievementsList =
+    activeTab === "javascript" ? ACHIEVEMENTS : REACT_ACHIEVEMENTS;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-          Analytics
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Analytics
+          </h1>
+
+          {/* Tab Switcher */}
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab("javascript")}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                ${
+                  activeTab === "javascript"
+                    ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }
+              `}
+            >
+              <Code className="h-4 w-4" />
+              JavaScript
+            </button>
+            <button
+              onClick={() => setActiveTab("react")}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                ${
+                  activeTab === "react"
+                    ? "bg-white dark:bg-gray-700 text-cyan-600 dark:text-cyan-400 shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }
+              `}
+            >
+              <Atom className="h-4 w-4" />
+              React
+            </button>
+          </div>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -155,55 +262,64 @@ export default function AnalyticsPage() {
             value={`${stats.bestScore}/10`}
             icon={Trophy}
           />
-          <StatCard
-            title="Current Streak"
-            value={`${stats.currentStreak} days`}
-            icon={Flame}
-          />
+          {activeTab === "javascript" ? (
+            <StatCard
+              title="Current Streak"
+              value={`${jsStats.currentStreak} days`}
+              icon={Flame}
+            />
+          ) : (
+            <StatCard
+              title="Topics Covered"
+              value={reactTopicChartData.length}
+              icon={Flame}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Score Over Time Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Performance Over Time</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {activeTab === "javascript" ? (
+                  <Code className="h-5 w-5 text-blue-500" />
+                ) : (
+                  <Atom className="h-5 w-5 text-cyan-500" />
+                )}
+                Performance Over Time
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                    />
-                    <YAxis 
-                      domain={[0, 10]} 
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1F2937', 
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#F9FAFB'
+                    <XAxis dataKey="date" stroke="#9CA3AF" fontSize={12} />
+                    <YAxis domain={[0, 10]} stroke="#9CA3AF" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1F2937",
+                        border: "none",
+                        borderRadius: "8px",
+                        color: "#F9FAFB",
                       }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke="#3B82F6" 
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke={accentColor}
                       strokeWidth={2}
-                      dot={{ fill: '#3B82F6', strokeWidth: 2 }}
-                      activeDot={{ r: 6, fill: '#3B82F6' }}
+                      dot={{ fill: accentColor, strokeWidth: 2 }}
+                      activeDot={{ r: 6, fill: accentColor }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
-                  Complete more quizzes to see your progress
+                  Complete more{" "}
+                  {activeTab === "javascript" ? "JavaScript" : "React"} quizzes
+                  to see your progress
                 </div>
               )}
             </CardContent>
@@ -212,47 +328,58 @@ export default function AnalyticsPage() {
           {/* Topic Accuracy Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Topic Accuracy</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {activeTab === "javascript" ? (
+                  <Code className="h-5 w-5 text-blue-500" />
+                ) : (
+                  <Atom className="h-5 w-5 text-cyan-500" />
+                )}
+                Topic Accuracy
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {topicChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={topicChartData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis 
-                      type="number" 
-                      domain={[0, 100]} 
+                    <XAxis
+                      type="number"
+                      domain={[0, 100]}
                       stroke="#9CA3AF"
                       fontSize={12}
                       tickFormatter={(value) => `${value}%`}
                     />
-                    <YAxis 
-                      type="category" 
-                      dataKey="topic" 
+                    <YAxis
+                      type="category"
+                      dataKey="topic"
                       stroke="#9CA3AF"
                       fontSize={10}
                       width={120}
-                      tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                      tickFormatter={(value) =>
+                        value.length > 15
+                          ? `${value.substring(0, 15)}...`
+                          : value
+                      }
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1F2937', 
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#F9FAFB'
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1F2937",
+                        border: "none",
+                        borderRadius: "8px",
+                        color: "#F9FAFB",
                       }}
-                      formatter={(value) => [`${value}%`, 'Accuracy']}
+                      formatter={(value) => [`${value}%`, "Accuracy"]}
                     />
                     <Bar dataKey="accuracy" radius={[0, 4, 4, 0]}>
                       {topicChartData.map((entry, index) => (
-                        <Cell 
+                        <Cell
                           key={`cell-${index}`}
                           fill={
-                            entry.accuracy >= 80 
-                              ? '#22C55E' 
-                              : entry.accuracy >= 50 
-                              ? '#F59E0B' 
-                              : '#EF4444'
+                            entry.accuracy >= 80
+                              ? "#22C55E"
+                              : entry.accuracy >= 50
+                                ? "#F59E0B"
+                                : "#EF4444"
                           }
                         />
                       ))}
@@ -261,7 +388,9 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
-                  Complete more quizzes to see topic performance
+                  Complete more{" "}
+                  {activeTab === "javascript" ? "JavaScript" : "React"} quizzes
+                  to see topic performance
                 </div>
               )}
             </CardContent>
@@ -278,10 +407,10 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {topicChartData.filter(t => t.accuracy >= 70).length > 0 ? (
+              {topicChartData.filter((t) => t.accuracy >= 70).length > 0 ? (
                 <div className="space-y-2">
                   {topicChartData
-                    .filter(t => t.accuracy >= 70)
+                    .filter((t) => t.accuracy >= 70)
                     .map((topic) => (
                       <div
                         key={topic.topic}
@@ -298,7 +427,9 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  Keep practicing to identify your strengths!
+                  Keep practicing{" "}
+                  {activeTab === "javascript" ? "JavaScript" : "React"} to
+                  identify your strengths!
                 </p>
               )}
             </CardContent>
@@ -312,10 +443,10 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {topicChartData.filter(t => t.accuracy < 60).length > 0 ? (
+              {topicChartData.filter((t) => t.accuracy < 60).length > 0 ? (
                 <div className="space-y-2">
                   {topicChartData
-                    .filter(t => t.accuracy < 60)
+                    .filter((t) => t.accuracy < 60)
                     .map((topic) => (
                       <div
                         key={topic.topic}
@@ -332,7 +463,8 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  Great job! No weak areas detected.
+                  Great job! No weak areas detected in{" "}
+                  {activeTab === "javascript" ? "JavaScript" : "React"}.
                 </p>
               )}
             </CardContent>
@@ -344,21 +476,24 @@ export default function AnalyticsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5 text-yellow-500" />
-              Achievements
+              {activeTab === "javascript" ? "JavaScript" : "React"} Achievements
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {ACHIEVEMENTS.map((achievement: AchievementInfo) => {
-                const isUnlocked = unlockedAchievementTypes.includes(achievement.type);
+              {achievementsList.map((achievement: AchievementInfo) => {
+                const isUnlocked = unlockedAchievementTypes.includes(
+                  achievement.type,
+                );
                 return (
                   <div
                     key={achievement.type}
                     className={`
                       p-4 rounded-lg text-center transition-all
-                      ${isUnlocked
-                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700'
-                        : 'bg-gray-100 dark:bg-gray-800 opacity-50 grayscale'
+                      ${
+                        isUnlocked
+                          ? "bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700"
+                          : "bg-gray-100 dark:bg-gray-800 opacity-50 grayscale"
                       }
                     `}
                   >
