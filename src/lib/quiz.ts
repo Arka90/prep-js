@@ -1,5 +1,5 @@
-import { QuizQuestion } from '@/types';
-import { formatJavaScript } from '@/lib/formatting';
+import { QuizQuestion } from "@/types";
+import { formatJavaScript } from "@/lib/formatting";
 
 interface TargetSubtopic {
   mainTopic: string;
@@ -72,17 +72,21 @@ export interface GeneratedQuizResult {
   targetSubtopics?: TargetSubtopic[];
 }
 
-export async function generateQuiz(dayNumber: number, userId?: string): Promise<GeneratedQuizResult> {
-  const response = await fetch('/api/quiz/generate', {
-    method: 'POST',
+export async function generateQuiz(
+  dayNumber: number,
+  userId?: string,
+  provider = "openai",
+): Promise<GeneratedQuizResult> {
+  const response = await fetch("/api/quiz/generate", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ dayNumber, userId }),
+    body: JSON.stringify({ dayNumber, userId, provider }),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to generate quiz');
+    throw new Error("Failed to generate quiz");
   }
 
   const data = await response.json();
@@ -98,33 +102,34 @@ export function getOpenAIPrompt(dayNumber: number): string {
 
 export function getOpenAIPromptWithTopics(
   dayNumber: number,
-  targetSubtopics: TargetSubtopic[]
+  targetSubtopics: TargetSubtopic[],
 ): string {
   const subtopicsList = targetSubtopics
-    .map(t => `- ${t.mainTopic}: ${t.subtopic}`)
-    .join('\n');
-  
-  return OPENAI_PROMPT_WITH_TOPICS
-    .replace(/{day_number}/g, String(dayNumber))
-    .replace(/{target_subtopics}/g, subtopicsList);
+    .map((t) => `- ${t.mainTopic}: ${t.subtopic}`)
+    .join("\n");
+
+  return OPENAI_PROMPT_WITH_TOPICS.replace(
+    /{day_number}/g,
+    String(dayNumber),
+  ).replace(/{target_subtopics}/g, subtopicsList);
 }
 
 export function calculateScore(
   questions: QuizQuestion[],
-  userAnswers: string[]
+  userAnswers: string[],
 ): { score: number; correct: boolean[] } {
   const correct: boolean[] = [];
   let score = 0;
 
   questions.forEach((question, index) => {
-    const userAnswer = (userAnswers[index] || '').trim().toLowerCase();
+    const userAnswer = (userAnswers[index] || "").trim().toLowerCase();
     const expectedAnswer = question.expected_output.trim().toLowerCase();
-    
+
     // More lenient comparison - check if the core answer matches
-    const isCorrect = 
+    const isCorrect =
       userAnswer === expectedAnswer ||
       normalizeAnswer(userAnswer) === normalizeAnswer(expectedAnswer);
-    
+
     correct.push(isCorrect);
     if (isCorrect) score++;
   });
@@ -132,65 +137,78 @@ export function calculateScore(
   return { score, correct };
 }
 
-
 export function normalizeAnswer(answer: string): string {
   return answer
     .trim()
     .toLowerCase()
-    .replace(/["'`]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/\\n/g, '\n')
-    .replace(/\n/g, ' ')
-    .replace(/undefined/gi, 'undefined')
-    .replace(/null/gi, 'null')
-    .replace(/nan/gi, 'NaN')
-    .replace(/true/gi, 'true')
-    .replace(/false/gi, 'false');
+    .replace(/["'`]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\\n/g, "\n")
+    .replace(/\n/g, " ")
+    .replace(/undefined/gi, "undefined")
+    .replace(/null/gi, "null")
+    .replace(/nan/gi, "NaN")
+    .replace(/true/gi, "true")
+    .replace(/false/gi, "false");
 }
 
-export function basicAnswerMatch(userAnswer: string, expectedOutput: string): boolean {
+export function basicAnswerMatch(
+  userAnswer: string,
+  expectedOutput: string,
+): boolean {
   const normalizedUser = normalizeAnswer(userAnswer);
   const normalizedExpected = normalizeAnswer(expectedOutput);
-  
+
   // Direct match
   if (normalizedUser === normalizedExpected) {
     return true;
   }
-  
+
   // Try matching with newlines replaced by spaces
-  const userNoNewlines = normalizedUser.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  const expectedNoNewlines = normalizedExpected.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  
+  const userNoNewlines = normalizedUser
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const expectedNoNewlines = normalizedExpected
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
   if (userNoNewlines === expectedNoNewlines) {
     return true;
   }
-  
+
   // Try matching numbers/values as separate tokens
-  const userTokens = normalizedUser.split(/[\s,]+/).filter(t => t.length > 0);
-  const expectedTokens = normalizedExpected.split(/[\s,]+/).filter(t => t.length > 0);
-  
-  if (userTokens.length === expectedTokens.length && 
-      userTokens.every((t, i) => t === expectedTokens[i])) {
+  const userTokens = normalizedUser.split(/[\s,]+/).filter((t) => t.length > 0);
+  const expectedTokens = normalizedExpected
+    .split(/[\s,]+/)
+    .filter((t) => t.length > 0);
+
+  if (
+    userTokens.length === expectedTokens.length &&
+    userTokens.every((t, i) => t === expectedTokens[i])
+  ) {
     return true;
   }
-  
+
   return false;
 }
 
 export function calculatePoints(score: number, timeTaken: number): number {
   // Base points: 10 per correct answer
   const basePoints = score * 10;
-  
+
   // Time bonus: up to 50 points for fast completion
   // Full bonus if completed in under 5 minutes, decreasing linearly
   const maxTimeForBonus = 5 * 60; // 5 minutes
-  const timeBonus = timeTaken < maxTimeForBonus 
-    ? Math.round(50 * (1 - timeTaken / maxTimeForBonus))
-    : 0;
-  
+  const timeBonus =
+    timeTaken < maxTimeForBonus
+      ? Math.round(50 * (1 - timeTaken / maxTimeForBonus))
+      : 0;
+
   // Perfect score bonus
   const perfectBonus = score === 10 ? 25 : 0;
-  
+
   return basePoints + timeBonus + perfectBonus;
 }
 
@@ -220,8 +238,29 @@ export function calculateLevel(totalPoints: number): number {
 }
 
 export function getPointsForNextLevel(currentPoints: number): number {
-  const thresholds = [0, 100, 250, 500, 850, 1300, 1850, 2500, 3250, 4100, 5000, 
-                      6000, 7100, 8300, 9600, 11000, 12500, 14100, 15800, 17600, Infinity];
+  const thresholds = [
+    0,
+    100,
+    250,
+    500,
+    850,
+    1300,
+    1850,
+    2500,
+    3250,
+    4100,
+    5000,
+    6000,
+    7100,
+    8300,
+    9600,
+    11000,
+    12500,
+    14100,
+    15800,
+    17600,
+    Infinity,
+  ];
   const currentLevel = calculateLevel(currentPoints);
   return thresholds[currentLevel] - currentPoints;
 }
@@ -229,15 +268,15 @@ export function getPointsForNextLevel(currentPoints: number): number {
 export function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 }
 
@@ -247,18 +286,18 @@ export function formatCodeSnippet(code: string): string {
 
 export function getDayNumber(firstQuizDate: string | null): number {
   if (!firstQuizDate) return 1;
-  
+
   const first = new Date(firstQuizDate);
   const now = new Date();
-  
+
   // Calculate difference in days, ensuring positive value only if now >= first
   const diffTime = now.getTime() - first.getTime();
-  
+
   // If the first quiz is in the future (shouldn't happen), return 1
   if (diffTime < 0) return 1;
-  
+
   // Use floor and add 1 to get day number (day 1 is the first day)
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-  
+
   return Math.max(1, diffDays);
 }

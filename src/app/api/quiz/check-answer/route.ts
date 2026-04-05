@@ -1,32 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { QuizQuestion } from '@/types';
-import { evaluateAnswer, EvaluationResult } from './evaluation-pipeline';
+import { NextRequest, NextResponse } from "next/server";
+import { QuizQuestion } from "@/types";
+import { evaluateAnswer, EvaluationResult } from "./evaluation-pipeline";
+import { callAI, AIProvider } from "@/lib/ai-client";
 
 interface CheckAnswerRequest {
   question: QuizQuestion;
   userAnswer: string;
+  provider?: AIProvider;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, userAnswer }: CheckAnswerRequest = await request.json();
+    const {
+      question,
+      userAnswer,
+      provider = "openai",
+    }: CheckAnswerRequest = await request.json();
 
     if (!question || userAnswer === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: "Missing required fields" },
+        { status: 400 },
       );
     }
 
     // AI Check Function (injected into pipeline)
-    const aiCheckFn = async (userAnswer: string, expectedOutput: string, question: QuizQuestion): Promise<EvaluationResult | null> => {
-      const apiKey = process.env.OPENAI_API_KEY;
-
-      if (!apiKey) {
-        console.warn('No OpenAI key found, skipping AI check');
-        return null; // Pipeline will fallback to rejection
-      }
-
+    const aiCheckFn = async (
+      userAnswer: string,
+      expectedOutput: string,
+      question: QuizQuestion,
+    ): Promise<EvaluationResult | null> => {
       const aiPrompt = `You are a JavaScript quiz answer checker. Your job is to determine if a user's answer is conceptually correct, even if it has minor formatting differences, typos, or variations in representation.
 
 Code snippet:
@@ -52,74 +55,60 @@ Respond with ONLY a JSON object:
 }`;
 
       try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4-turbo-preview',
-            messages: [
-              {
-                role: 'user',
-                content: aiPrompt,
-              },
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.1,
-            max_tokens: 200,
-          }),
+        const content = await callAI(aiPrompt, {
+          provider: provider as AIProvider,
+          temperature: 0.1,
+          maxTokens: 200,
+          jsonMode: true,
         });
 
-        if (!response.ok) {
-          console.error('OpenAI API error:', response.statusText);
-          return null;
-        }
-
-        const data = await response.json();
-        const content = data.choices[0].message.content;
         const result = JSON.parse(content);
-        
+
         // Map AI result to our EvaluationResult
-        if (typeof result.isCorrect === 'boolean') {
-           return {
-             isCorrect: result.isCorrect,
-             confidence: result.confidence || 0.8, // Default confidence if missing
-             feedback: result.feedback,
-             method: "ai_conceptual_judgment"
-           };
+        if (typeof result.isCorrect === "boolean") {
+          return {
+            isCorrect: result.isCorrect,
+            confidence: result.confidence || 0.8,
+            feedback: result.feedback,
+            method: "ai_conceptual_judgment",
+          };
         }
       } catch (error) {
-        console.error('AI Check failed:', error);
+        console.error("AI Check failed:", error);
       }
       return null;
     };
 
     // Run the pipeline
-    const result = await evaluateAnswer(userAnswer, question.expected_output, question, aiCheckFn);
+    const result = await evaluateAnswer(
+      userAnswer,
+      question.expected_output,
+      question,
+      aiCheckFn,
+    );
 
     // If result is correct, or if it is incorrect with high confidence, return it.
     // The pipeline returns a definitive result or a fallback rejection.
     // We can directly return the result.
-    
+
     // We map EvaluationResult to the API response format { isCorrect, feedback }
     // We might want to include confidence/method for debugging/logging if needed, but for now stick to interface.
-    
+
     // Log for "auditability" requirement
-    console.log(`[Eval] Method: ${result.method}, Correct: ${result.isCorrect}, Confidence: ${result.confidence}`);
+    console.log(
+      `[Eval] Method: ${result.method}, Correct: ${result.isCorrect}, Confidence: ${result.confidence}`,
+    );
 
     return NextResponse.json({
       isCorrect: result.isCorrect,
-      feedback: result.feedback || (result.isCorrect ? 'Correct!' : 'Incorrect'),
+      feedback:
+        result.feedback || (result.isCorrect ? "Correct!" : "Incorrect"),
     });
-
   } catch (error) {
-    console.error('Answer check error:', error);
+    console.error("Answer check error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
-

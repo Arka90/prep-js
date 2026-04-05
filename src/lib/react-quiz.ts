@@ -94,13 +94,14 @@ export interface GeneratedReactQuizResult {
 export async function generateReactQuiz(
   dayNumber: number,
   userId?: string,
+  provider = "openai",
 ): Promise<GeneratedReactQuizResult> {
   const response = await fetch("/api/react-quiz/generate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ dayNumber, userId }),
+    body: JSON.stringify({ dayNumber, userId, provider }),
   });
 
   if (!response.ok) {

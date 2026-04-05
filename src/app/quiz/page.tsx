@@ -18,7 +18,7 @@ import { LoadingOverlay } from "@/components/ui/Loading";
 import { QuizTimer } from "@/components/quiz/QuizTimer";
 import { QuestionCard } from "@/components/quiz/QuestionCard";
 import { QuestionNavigator } from "@/components/quiz/QuestionNavigator";
-import { useAuthStore, useQuizStore } from "@/lib/store";
+import { useAuthStore, useQuizStore, useAIProviderStore } from "@/lib/store";
 import { generateQuiz } from "@/lib/quiz";
 
 interface TodayQuizStatus {
@@ -44,6 +44,7 @@ interface TargetSubtopic {
 export default function QuizPage() {
   const router = useRouter();
   const { isAuthenticated, userId } = useAuthStore();
+  const { provider } = useAIProviderStore();
   const {
     questions,
     currentQuestionIndex,
@@ -110,12 +111,16 @@ export default function QuizPage() {
 
     try {
       // Pass userId to get targeted subtopics based on syllabus progress
-      const result = await generateQuiz(currentDayNumber, userId || undefined);
+      const result = await generateQuiz(
+        currentDayNumber,
+        userId || undefined,
+        provider,
+      );
 
       setQuestions(result.questions);
       setTimeRemaining(20 * 60); // 20 minutes
       setStartTime(Date.now());
-      
+
       // Store target subtopics for tracking after quiz completion
       if (result.targetSubtopics) {
         targetSubtopicsRef.current = result.targetSubtopics;
@@ -175,6 +180,7 @@ export default function QuizPage() {
           answers,
           timeTaken,
           dayNumber: currentDayNumber,
+          provider,
         }),
       });
 
@@ -199,7 +205,7 @@ export default function QuizPage() {
             console.error("Failed to track subtopics:", syllabusError);
           }
         }
-        
+
         resetQuiz();
         router.push(`/quiz/results/${data.quizId}`);
       } else {

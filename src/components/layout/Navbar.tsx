@@ -16,8 +16,22 @@ import {
   Atom,
 } from "lucide-react";
 import { useState } from "react";
-import { useAuthStore, useThemeStore } from "@/lib/store";
+import { useAuthStore, useThemeStore, useAIProviderStore } from "@/lib/store";
 import { Button } from "@/components/ui/Button";
+import { AIProvider } from "@/lib/ai-client";
+
+const AI_PROVIDERS: { value: AIProvider; label: string; color: string }[] = [
+  {
+    value: "openai",
+    label: "OpenAI",
+    color: "text-green-600 dark:text-green-400",
+  },
+  {
+    value: "anthropic",
+    label: "Claude",
+    color: "text-purple-600 dark:text-purple-400",
+  },
+];
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -33,6 +47,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { logout } = useAuthStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
+  const { provider, setProvider } = useAIProviderStore();
 
   const handleLogout = () => {
     logout();
@@ -79,6 +94,26 @@ export function Navbar() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
+            {/* AI Provider Selector */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                AI:
+              </span>
+              {AI_PROVIDERS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => setProvider(p.value)}
+                  className={`text-xs font-semibold px-2 py-0.5 rounded transition-colors ${
+                    provider === p.value
+                      ? `${p.color} bg-white dark:bg-gray-600 shadow-sm`
+                      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                  }`}
+                  title={`Use ${p.label}`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -119,6 +154,25 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 dark:border-gray-700">
           <div className="px-4 py-3 space-y-1">
+            {/* Mobile AI Provider Selector */}
+            <div className="flex items-center gap-2 px-4 py-2 mb-1">
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                AI Provider:
+              </span>
+              {AI_PROVIDERS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => setProvider(p.value)}
+                  className={`text-sm font-semibold px-3 py-1 rounded-lg border transition-colors ${
+                    provider === p.value
+                      ? `${p.color} border-current bg-white dark:bg-gray-700`
+                      : "text-gray-400 border-transparent hover:text-gray-600 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (

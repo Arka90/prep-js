@@ -19,7 +19,11 @@ import { LoadingOverlay } from "@/components/ui/Loading";
 import { QuizTimer } from "@/components/quiz/QuizTimer";
 import { ReactQuestionCard } from "@/components/quiz/ReactQuestionCard";
 import { QuestionNavigator } from "@/components/quiz/QuestionNavigator";
-import { useAuthStore, useReactQuizStore } from "@/lib/store";
+import {
+  useAuthStore,
+  useReactQuizStore,
+  useAIProviderStore,
+} from "@/lib/store";
 import { generateReactQuiz } from "@/lib/react-quiz";
 
 interface TodayQuizStatus {
@@ -45,6 +49,7 @@ interface TargetSubtopic {
 export default function ReactQuizPage() {
   const router = useRouter();
   const { isAuthenticated, userId } = useAuthStore();
+  const { provider } = useAIProviderStore();
   const {
     questions,
     currentQuestionIndex,
@@ -122,6 +127,7 @@ export default function ReactQuizPage() {
       const result = await generateReactQuiz(
         currentDayNumber,
         userId || undefined,
+        provider,
       );
       console.log(
         "React quiz generated:",

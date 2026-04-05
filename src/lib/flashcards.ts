@@ -1,5 +1,6 @@
-import { QuizQuestion, Flashcard, FlashcardType } from '@/types';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { QuizQuestion, Flashcard, FlashcardType } from "@/types";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { callAI, AIProvider } from "@/lib/ai-client";
 
 const FLASHCARD_PROMPT = `You are a JavaScript concept repair expert. A user answered a quiz question incorrectly. 
 Your goal is to create a SINGLE flashcard to fix their specific misconception.
@@ -40,68 +41,62 @@ OUTPUT JSON FORMAT:
 
 Keep it brief. Focus on REPAIRING the mental model.`;
 
-// ... prompt string same as before ... 
-// We don't need to change the prompt unless we want AI to confirm the topic, 
+// ... prompt string same as before ...
+// We don't need to change the prompt unless we want AI to confirm the topic,
 // but we already have the topic from the Question object.
 
 export async function generateFlashcardFromMistake(
   question: QuizQuestion,
   userAnswer: string,
   userId: string,
-  apiKey: string
+  provider: AIProvider,
 ): Promise<boolean> {
   // Don't generate if the answers are too similar (noise) or empty
-  if (!userAnswer || userAnswer.trim() === '') return false;
+  if (!userAnswer || userAnswer.trim() === "") return false;
 
   try {
-    const prompt = FLASHCARD_PROMPT
-      .replace('{code_snippet}', question.code_snippet)
-      .replace('{expected_output}', question.expected_output)
-      .replace('{user_answer}', userAnswer)
-      .replace('{explanation}', question.explanation);
+    const prompt = FLASHCARD_PROMPT.replace(
+      "{code_snippet}",
+      question.code_snippet,
+    )
+      .replace("{expected_output}", question.expected_output)
+      .replace("{user_answer}", userAnswer)
+      .replace("{explanation}", question.explanation);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-        temperature: 0.2,
-      }),
+    const raw = await callAI(prompt, {
+      provider,
+      temperature: 0.2,
+      maxTokens: 1024,
+      jsonMode: true,
     });
 
-    if (!response.ok) {
-        console.error('OpenAI Flashcard gen failed', response.statusText);
-        return false;
+    if (!raw) {
+      console.error("Flashcard gen: empty response");
+      return false;
     }
 
-    const data = await response.json();
-    const content = JSON.parse(data.choices[0].message.content);
+    const content = JSON.parse(raw);
 
     // Save to Supabase
     const supabase = await createServerSupabaseClient();
-    
+
     // Check for duplicate
     const { data: existing } = await supabase
-        .from('flashcards')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('concept_name', content.concept_name)
-        .eq('status', 'new')
-        .single();
-    
+      .from("flashcards")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("concept_name", content.concept_name)
+      .eq("status", "new")
+      .single();
+
     if (existing) {
-        return true; 
+      return true;
     }
 
     // Default to 'General' if topic not present (though it should be)
-    const topic = question.topic || 'General';
+    const topic = question.topic || "General";
 
-    await supabase.from('flashcards').insert({
+    await supabase.from("flashcards").insert({
       user_id: userId,
       topic: topic,
       concept_name: content.concept_name,
@@ -109,13 +104,13 @@ export async function generateFlashcardFromMistake(
       card_type: content.card_type,
       front_content: content.front_content,
       back_content: content.back_content,
-      status: 'new',
+      status: "new",
       next_review_at: new Date().toISOString(),
     });
 
     return true;
   } catch (error) {
-    console.error('Error generating flashcard:', error);
+    console.error("Error generating flashcard:", error);
     return false;
   }
 }

@@ -6,6 +6,7 @@ import {
   UserStats,
   Achievement,
 } from "@/types";
+import { AIProvider } from "@/lib/ai-client";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -240,6 +241,23 @@ export const useReactQuizStore = create<ReactQuizState>()(
     }),
     {
       name: "react-quiz-storage",
+    },
+  ),
+);
+
+interface AIProviderState {
+  provider: AIProvider;
+  setProvider: (provider: AIProvider) => void;
+}
+
+export const useAIProviderStore = create<AIProviderState>()(
+  persist(
+    (set) => ({
+      provider: "openai",
+      setProvider: (provider) => set({ provider }),
+    }),
+    {
+      name: "ai-provider-storage",
     },
   ),
 );

@@ -1,9 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { calculatePoints, calculateLevel } from '@/lib/quiz';
-import { QuizQuestion, AchievementType, User, TopicPerformance, QuizAttempt } from '@/types';
-import { normalizeAnswer, basicAnswerMatch } from '@/lib/quiz';
-import { generateFlashcardFromMistake } from '@/lib/flashcards';
+import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { calculatePoints, calculateLevel } from "@/lib/quiz";
+import {
+  QuizQuestion,
+  AchievementType,
+  User,
+  TopicPerformance,
+  QuizAttempt,
+} from "@/types";
+import { normalizeAnswer, basicAnswerMatch } from "@/lib/quiz";
+import { generateFlashcardFromMistake } from "@/lib/flashcards";
+import { callAI, AIProvider } from "@/lib/ai-client";
 
 // Answer matching logic moved to @/lib/quiz
 
@@ -13,7 +20,7 @@ import { generateFlashcardFromMistake } from '@/lib/flashcards';
 async function checkAnswerWithAI(
   question: QuizQuestion,
   userAnswer: string,
-  apiKey: string
+  provider: AIProvider,
 ): Promise<boolean> {
   const aiPrompt = `You are a JavaScript quiz answer checker. Determine if the user's answer is conceptually correct.
 
@@ -34,27 +41,12 @@ Rules:
 Respond with ONLY: {"isCorrect": true} or {"isCorrect": false}`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
-        messages: [{ role: 'user', content: aiPrompt }],
-        response_format: { type: 'json_object' },
-        temperature: 0.1,
-        max_tokens: 50,
-      }),
+    const content = await callAI(aiPrompt, {
+      provider,
+      temperature: 0.1,
+      maxTokens: 50,
+      jsonMode: true,
     });
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
     const result = JSON.parse(content);
     return result.isCorrect === true;
   } catch {
@@ -68,23 +60,24 @@ Respond with ONLY: {"isCorrect": true} or {"isCorrect": false}`;
 async function calculateScoreSmart(
   questions: QuizQuestion[],
   userAnswers: string[],
-  apiKey: string | undefined
+  provider: AIProvider,
+  hasApiKey: boolean,
 ): Promise<{ score: number; correct: boolean[] }> {
   const correct: boolean[] = [];
   let score = 0;
 
   for (let index = 0; index < questions.length; index++) {
     const question = questions[index];
-    const userAnswer = (userAnswers[index] || '').trim();
-    
+    const userAnswer = (userAnswers[index] || "").trim();
+
     // First try basic matching
     let isCorrect = basicAnswerMatch(userAnswer, question.expected_output);
-    
+
     // If basic matching fails and we have an API key, try AI checking
-    if (!isCorrect && apiKey && userAnswer.length > 0) {
-      isCorrect = await checkAnswerWithAI(question, userAnswer, apiKey);
+    if (!isCorrect && hasApiKey && userAnswer.length > 0) {
+      isCorrect = await checkAnswerWithAI(question, userAnswer, provider);
     }
-    
+
     correct.push(isCorrect);
     if (isCorrect) score++;
   }
@@ -94,27 +87,42 @@ async function calculateScoreSmart(
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, questions, answers, timeTaken, dayNumber } = await request.json();
+    const {
+      userId,
+      questions,
+      answers,
+      timeTaken,
+      dayNumber,
+      provider = "openai",
+    } = await request.json();
 
     if (!userId || !questions || !answers) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: "Missing required fields" },
+        { status: 400 },
       );
     }
 
     const supabase = await createServerSupabaseClient();
-    
-    // Get OpenAI API key for smart answer checking
-    const apiKey = process.env.OPENAI_API_KEY;
+
+    const selectedProvider = provider as AIProvider;
+    const hasApiKey =
+      selectedProvider === "anthropic"
+        ? !!process.env.ANTHROPIC_API_KEY
+        : !!process.env.OPENAI_API_KEY;
 
     // Calculate score using smart answer checking
-    const { score, correct } = await calculateScoreSmart(questions, answers, apiKey);
+    const { score, correct } = await calculateScoreSmart(
+      questions,
+      answers,
+      selectedProvider,
+      hasApiKey,
+    );
     const points = calculatePoints(score, timeTaken);
 
     // Save quiz attempt
     const { data: quizAttemptData, error: quizError } = await supabase
-      .from('quiz_attempts')
+      .from("quiz_attempts")
       .insert({
         user_id: userId,
         day_number: dayNumber,
@@ -128,10 +136,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (quizError) {
-      console.error('Quiz save error:', quizError);
+      console.error("Quiz save error:", quizError);
       return NextResponse.json(
-        { error: 'Failed to save quiz' },
-        { status: 500 }
+        { error: "Failed to save quiz" },
+        { status: 500 },
       );
     }
 
@@ -151,25 +159,25 @@ export async function POST(request: NextRequest) {
 
     for (const [topic, stats] of Object.entries(topicUpdates)) {
       const { data: existingData } = await supabase
-        .from('topic_performance')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('topic_name', topic)
+        .from("topic_performance")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("topic_name", topic)
         .single();
 
       const existing = existingData as TopicPerformance | null;
 
       if (existing) {
         await supabase
-          .from('topic_performance')
+          .from("topic_performance")
           .update({
             total_attempts: existing.total_attempts + stats.total,
             correct_attempts: existing.correct_attempts + stats.correct,
             last_updated: new Date().toISOString(),
           })
-          .eq('id', existing.id);
+          .eq("id", existing.id);
       } else {
-        await supabase.from('topic_performance').insert({
+        await supabase.from("topic_performance").insert({
           user_id: userId,
           topic_name: topic,
           total_attempts: stats.total,
@@ -179,25 +187,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate Flashcards for incorrect answers (Async - don't block response if possible, but Vercel serverless might kill it so we await)
-    // In a real production app, use a queue (QStash/Inngest). For MVP, we await or Promise.all.
-    if (apiKey) {
-        const flashcardPromises = (questions as QuizQuestion[]).map((q, index) => {
-            if (!correct[index]) {
-                return generateFlashcardFromMistake(q, answers[index], userId, apiKey);
-            }
-            return Promise.resolve(false);
-        });
-        
-        // We catch errors inside generateFlashcardFromMistake so this shouldn't fail the request
-        await Promise.all(flashcardPromises);
+    // Generate Flashcards for incorrect answers
+    if (hasApiKey) {
+      const flashcardPromises = (questions as QuizQuestion[]).map(
+        (q, index) => {
+          if (!correct[index]) {
+            return generateFlashcardFromMistake(
+              q,
+              answers[index],
+              userId,
+              selectedProvider,
+            );
+          }
+          return Promise.resolve(false);
+        },
+      );
+
+      // We catch errors inside generateFlashcardFromMistake so this shouldn't fail the request
+      await Promise.all(flashcardPromises);
     }
 
     // Get user and update stats
     const { data: userData } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
+      .from("users")
+      .select("*")
+      .eq("id", userId)
       .single();
 
     const user = userData as User | null;
@@ -205,19 +219,19 @@ export async function POST(request: NextRequest) {
     if (user) {
       const newTotalPoints = user.total_points + points;
       const newLevel = calculateLevel(newTotalPoints);
-      
+
       // Check streak using UTC dates for consistency across timezones
       const getUTCDateString = (date: Date) => {
         return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
       };
-      
+
       const now = new Date();
       const today = getUTCDateString(now);
-      const lastQuizDate = user.last_quiz_date 
-        ? getUTCDateString(new Date(user.last_quiz_date)) 
+      const lastQuizDate = user.last_quiz_date
+        ? getUTCDateString(new Date(user.last_quiz_date))
         : null;
       const yesterday = getUTCDateString(new Date(now.getTime() - 86400000));
-      
+
       let newStreak = user.current_streak;
       if (lastQuizDate === today) {
         // Already took quiz today, streak unchanged
@@ -230,64 +244,69 @@ export async function POST(request: NextRequest) {
       }
 
       await supabase
-        .from('users')
+        .from("users")
         .update({
           total_points: newTotalPoints,
           level: newLevel,
           current_streak: newStreak,
           last_quiz_date: new Date().toISOString(),
         })
-        .eq('id', userId);
+        .eq("id", userId);
 
       // Check for achievements
       const newAchievements: AchievementType[] = [];
       const { data: existingAchievements } = await supabase
-        .from('achievements')
-        .select('achievement_type')
-        .eq('user_id', userId);
+        .from("achievements")
+        .select("achievement_type")
+        .eq("user_id", userId);
 
-      const achievementTypes = existingAchievements?.map(a => a.achievement_type) || [];
+      const achievementTypes =
+        existingAchievements?.map((a) => a.achievement_type) || [];
 
       // First quiz
-      if (!achievementTypes.includes('first_quiz')) {
-        newAchievements.push('first_quiz');
+      if (!achievementTypes.includes("first_quiz")) {
+        newAchievements.push("first_quiz");
       }
 
       // Perfect score
-      if (score === 10 && !achievementTypes.includes('perfect_score')) {
-        newAchievements.push('perfect_score');
+      if (score === 10 && !achievementTypes.includes("perfect_score")) {
+        newAchievements.push("perfect_score");
       }
 
       // Speed demon (under 10 minutes with >80%)
-      if (timeTaken < 600 && score >= 8 && !achievementTypes.includes('speed_demon')) {
-        newAchievements.push('speed_demon');
+      if (
+        timeTaken < 600 &&
+        score >= 8 &&
+        !achievementTypes.includes("speed_demon")
+      ) {
+        newAchievements.push("speed_demon");
       }
 
       // Streak achievements
-      if (newStreak >= 7 && !achievementTypes.includes('streak_7')) {
-        newAchievements.push('streak_7');
+      if (newStreak >= 7 && !achievementTypes.includes("streak_7")) {
+        newAchievements.push("streak_7");
       }
-      if (newStreak >= 30 && !achievementTypes.includes('streak_30')) {
-        newAchievements.push('streak_30');
+      if (newStreak >= 30 && !achievementTypes.includes("streak_30")) {
+        newAchievements.push("streak_30");
       }
-      if (newStreak >= 100 && !achievementTypes.includes('streak_100')) {
-        newAchievements.push('streak_100');
+      if (newStreak >= 100 && !achievementTypes.includes("streak_100")) {
+        newAchievements.push("streak_100");
       }
 
       // Level achievements
-      if (newLevel >= 5 && !achievementTypes.includes('level_5')) {
-        newAchievements.push('level_5');
+      if (newLevel >= 5 && !achievementTypes.includes("level_5")) {
+        newAchievements.push("level_5");
       }
-      if (newLevel >= 10 && !achievementTypes.includes('level_10')) {
-        newAchievements.push('level_10');
+      if (newLevel >= 10 && !achievementTypes.includes("level_10")) {
+        newAchievements.push("level_10");
       }
-      if (newLevel >= 20 && !achievementTypes.includes('level_20')) {
-        newAchievements.push('level_20');
+      if (newLevel >= 20 && !achievementTypes.includes("level_20")) {
+        newAchievements.push("level_20");
       }
 
       // Save new achievements
       for (const achievement of newAchievements) {
-        await supabase.from('achievements').insert({
+        await supabase.from("achievements").insert({
           user_id: userId,
           achievement_type: achievement,
           unlocked_at: new Date().toISOString(),
@@ -303,10 +322,10 @@ export async function POST(request: NextRequest) {
       points,
     });
   } catch (error) {
-    console.error('Quiz submit error:', error);
+    console.error("Quiz submit error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

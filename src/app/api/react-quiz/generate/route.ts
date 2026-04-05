@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReactQuizPromptWithTopics } from "@/lib/react-quiz";
+import { callAI, AIProvider } from "@/lib/ai-client";
 import { ReactQuizQuestion } from "@/types";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import reactSyllabus from "@/data/react-syllabus.json";
@@ -90,8 +91,8 @@ async function getTargetSubtopics(
 export async function POST(request: NextRequest) {
   console.log("=== React Quiz Generate API Called ===");
   try {
-    const { dayNumber, userId } = await request.json();
-    console.log("Request body:", { dayNumber, userId });
+    const { dayNumber, userId, provider = "openai" } = await request.json();
+    console.log("Request body:", { dayNumber, userId, provider });
 
     if (!dayNumber || dayNumber < 1) {
       return NextResponse.json(
@@ -100,107 +101,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "OpenAI API key not configured" },
-        { status: 500 },
-      );
-    }
-
     // Get target subtopics using React syllabus strategy
     console.log("Getting target subtopics for user:", userId);
     const targetSubtopics = await getTargetSubtopics(userId);
     console.log("Target subtopics:", targetSubtopics.length);
 
-    const prompt = getReactQuizPromptWithTopics(dayNumber, targetSubtopics);
+    const systemPrompt = getReactQuizPromptWithTopics(
+      dayNumber,
+      targetSubtopics,
+    );
 
-    console.log("Calling OpenAI API...");
+    console.log(`Calling ${provider} API...`);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-
+    let content: string;
     try {
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
+      content = await callAI(
+        `Generate React interview questions for Day ${dayNumber} using the specified subtopics.`,
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "system",
-                content: prompt,
-              },
-              {
-                role: "user",
-                content: `Generate React interview questions for Day ${dayNumber} using the specified subtopics.`,
-              },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.8,
-          }),
-          signal: controller.signal,
+          provider: provider as AIProvider,
+          systemMessage: systemPrompt,
+          temperature: 0.8,
+          maxTokens: 4096,
+          jsonMode: true,
         },
       );
-
-      clearTimeout(timeoutId);
-      console.log("OpenAI response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        return NextResponse.json(
-          { error: "Failed to generate React quiz questions" },
-          { status: 500 },
-        );
-      }
-
-      const data = await response.json();
-      const content = data.choices[0].message.content;
-      console.log("OpenAI response received, parsing...");
-
-      let questions: ReactQuizQuestion[];
-      try {
-        const parsed = JSON.parse(content);
-        questions = parsed.questions || parsed;
-      } catch {
-        console.error("Failed to parse OpenAI response:", content);
-        return NextResponse.json(
-          { error: "Failed to parse React quiz questions" },
-          { status: 500 },
-        );
-      }
-
-      // Validate question structure
-      if (!Array.isArray(questions) || questions.length === 0) {
-        return NextResponse.json(
-          { error: "Invalid quiz questions format" },
-          { status: 500 },
-        );
-      }
-
-      console.log("Returning", questions.length, "questions");
-      return NextResponse.json({
-        questions,
-        targetSubtopics,
-      });
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError instanceof Error && fetchError.name === "AbortError") {
-        console.error("OpenAI API request timed out");
+    } catch (aiError) {
+      const isTimeout =
+        aiError instanceof Error && aiError.name === "AbortError";
+      if (isTimeout) {
+        console.error("AI API request timed out");
         return NextResponse.json(
           { error: "Request timed out. Please try again." },
           { status: 504 },
         );
       }
-      throw fetchError;
+      console.error("AI API error:", aiError);
+      return NextResponse.json(
+        { error: "Failed to generate React quiz questions" },
+        { status: 500 },
+      );
     }
+
+    console.log("AI response received, parsing...");
+
+    let questions: ReactQuizQuestion[];
+    try {
+      const parsed = JSON.parse(content);
+      questions = parsed.questions || parsed;
+    } catch {
+      console.error("Failed to parse AI response:", content);
+      return NextResponse.json(
+        { error: "Failed to parse React quiz questions" },
+        { status: 500 },
+      );
+    }
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return NextResponse.json(
+        { error: "Invalid quiz questions format" },
+        { status: 500 },
+      );
+    }
+
+    console.log("Returning", questions.length, "questions");
+    return NextResponse.json({
+      questions,
+      targetSubtopics,
+    });
   } catch (error) {
     console.error("React quiz generation error:", error);
     return NextResponse.json(

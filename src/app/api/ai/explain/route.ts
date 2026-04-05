@@ -1,17 +1,15 @@
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { callAI, AIProvider } from "@/lib/ai-client";
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, userAnswer } = await request.json();
+    const { question, userAnswer, provider = "openai" } = await request.json();
 
     if (!question) {
-      return NextResponse.json({ error: 'Question data required' }, { status: 400 });
-    }
-
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'OpenAI API key missing' }, { status: 500 });
+      return NextResponse.json(
+        { error: "Question data required" },
+        { status: 400 },
+      );
     }
 
     const prompt = `
@@ -34,33 +32,18 @@ Please provide a clear, simple explanation of the concept.
 5. Keep it under 200 words.
 `;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview', // Or gpt-4o-mini for speed/cost
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 300,
-      }),
+    const explanation = await callAI(prompt, {
+      provider: provider as AIProvider,
+      temperature: 0.7,
+      maxTokens: 300,
     });
-
-    if (!response.ok) {
-      throw new Error('OpenAI API request failed');
-    }
-
-    const data = await response.json();
-    const explanation = data.choices[0].message.content;
 
     return NextResponse.json({ explanation });
   } catch (error) {
-    console.error('AI explanation error:', error);
+    console.error("AI explanation error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

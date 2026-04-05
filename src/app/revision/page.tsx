@@ -3,27 +3,28 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  ChevronLeft, 
-  Trash2, 
-  Bot, 
-  BookOpen, 
+import {
+  ChevronLeft,
+  Trash2,
+  Bot,
+  BookOpen,
   CheckCircle,
   XCircle,
-  Code as CodeIcon
+  Code as CodeIcon,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/Loading";
 import { CodeSnippet } from "@/components/ui/CodeSnippet";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useAIProviderStore } from "@/lib/store";
 import { RevisionItem } from "@/types";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 
 export default function RevisionPage() {
   const router = useRouter();
   const { isAuthenticated, userId } = useAuthStore();
+  const { provider } = useAIProviderStore();
   const [items, setItems] = useState<RevisionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<RevisionItem | null>(null);
@@ -82,6 +83,7 @@ export default function RevisionPage() {
         body: JSON.stringify({
           question: item.question,
           userAnswer: item.user_answer,
+          provider,
         }),
       });
 
@@ -188,17 +190,17 @@ export default function RevisionPage() {
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                       Question Review
                     </h2>
-                     <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          <CodeIcon className="h-4 w-4" />
-                          Code Snippet
-                        </div>
-                        <CodeSnippet code={selectedItem.question.code_snippet} />
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <CodeIcon className="h-4 w-4" />
+                        Code Snippet
                       </div>
+                      <CodeSnippet code={selectedItem.question.code_snippet} />
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg">
-                         <div className="flex items-center gap-2 mb-1 text-sm font-medium text-red-700 dark:text-red-400">
+                        <div className="flex items-center gap-2 mb-1 text-sm font-medium text-red-700 dark:text-red-400">
                           <XCircle className="h-4 w-4" />
                           Your Answer
                         </div>
@@ -207,7 +209,7 @@ export default function RevisionPage() {
                         </div>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg">
-                         <div className="flex items-center gap-2 mb-1 text-sm font-medium text-green-700 dark:text-green-400">
+                        <div className="flex items-center gap-2 mb-1 text-sm font-medium text-green-700 dark:text-green-400">
                           <CheckCircle className="h-4 w-4" />
                           Expected Output
                         </div>
@@ -218,15 +220,15 @@ export default function RevisionPage() {
                     </div>
                   </div>
 
-                    {/* Original Explanation */}
-                    <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-b border-gray-100 dark:border-gray-800">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                        Original Explanation
-                      </h4>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                        {selectedItem.question.explanation}
-                      </p>
-                    </div>
+                  {/* Original Explanation */}
+                  <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-b border-gray-100 dark:border-gray-800">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Original Explanation
+                    </h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                      {selectedItem.question.explanation}
+                    </p>
+                  </div>
 
                   {/* AI Section */}
                   <div className="p-6 bg-indigo-50 dark:bg-indigo-900/10">
@@ -236,14 +238,17 @@ export default function RevisionPage() {
                         AI Explanation
                       </div>
                       {!aiExplanation && (
-                        <Button 
+                        <Button
                           onClick={() => handleExplain(selectedItem)}
                           disabled={isAiLoading}
                           className="bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                           {isAiLoading ? (
                             <>
-                              <LoadingSpinner size="sm" className="mr-2 text-white" />
+                              <LoadingSpinner
+                                size="sm"
+                                className="mr-2 text-white"
+                              />
                               Thinking...
                             </>
                           ) : (
@@ -258,10 +263,12 @@ export default function RevisionPage() {
                         <ReactMarkdown>{aiExplanation}</ReactMarkdown>
                       </div>
                     )}
-                    
+
                     {!aiExplanation && !isAiLoading && (
                       <p className="text-gray-500 dark:text-gray-400 text-sm">
-                        Click the button above to get a personalized explanation for why your answer was incorrect and how to understand the concept better.
+                        Click the button above to get a personalized explanation
+                        for why your answer was incorrect and how to understand
+                        the concept better.
                       </p>
                     )}
                   </div>
@@ -270,8 +277,13 @@ export default function RevisionPage() {
             ) : (
               <div className="h-full flex flex-col items-center justify-center p-12 text-center text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
                 <BookOpen className="h-12 w-12 mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-1">Select an item to revise</h3>
-                <p>Choose a question from the list to see details and get AI help.</p>
+                <h3 className="text-lg font-medium mb-1">
+                  Select an item to revise
+                </h3>
+                <p>
+                  Choose a question from the list to see details and get AI
+                  help.
+                </p>
               </div>
             )}
           </div>
