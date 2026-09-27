@@ -1,192 +1,82 @@
-# PrepJS - JavaScript Interview Quiz App 🧠
+# prep.js
 
-A full-featured JavaScript interview preparation web application with AI-powered quiz generation, progress tracking, and detailed analytics.
+A personal training app for staying sharp in **JavaScript, Node.js, MongoDB, React and Next.js** while writing most code with AI.
 
-![PrepJS](https://img.shields.io/badge/PrepJS-JavaScript%20Quiz-blue)
-![Next.js](https://img.shields.io/badge/Next.js-16-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4)
+- **Daily drill** — fresh questions every day (predict the output, find the bug, multiple choice, explain it), mixing reviews of weak concepts with new material.
+- **Spaced repetition per concept** — miss something and it comes back tomorrow in a *different format and from a different angle*, aimed at the exact misconception you showed, until you get it right four times in a row, spaced out over days.
+- **Progressive difficulty** — the difficulty floor rises every 12 days, harder curriculum tiers unlock over time, and each concept levels up as you keep getting it right.
+- **Never a repeat** — every question and challenge is embedded into a vector store (pgvector); anything too close to something you've already seen is rejected and rewritten.
+- **Verified answers** — JS/Node "predict the output" questions are *executed* in a sandbox; the real output becomes the answer.
+- **Coding arena** — a daily *build* kata and a daily *debug* challenge with test cases. Tests are validated against a reference solution before you see them. Run visible tests in the browser, submit against hidden tests on the server.
+- **Single user** — one password, no accounts.
 
-## ✨ Features
+## Stack
 
-- **AI-Powered Quizzes**: Generate unique JavaScript questions using OpenAI GPT-4
-- **15 Core JavaScript Topics**: Closures, Hoisting, this Keyword, Type Coercion, and more
-- **Progressive Difficulty**: Questions adapt based on your practice day
-- **Timed Quizzes**: 20-minute quizzes with countdown timer
-- **Detailed Analytics**: Track performance by topic, view trends over time
-- **Gamification**: Streaks, achievements, points, and level progression
-- **Dark Mode**: Toggle between light and dark themes
-- **Mobile Responsive**: Works great on all device sizes
-- **PWA Support**: Install as a progressive web app
+Next.js 16 (App Router) · Supabase Postgres + pgvector · OpenAI (writer, grader and embeddings) · Tailwind 4 · CodeMirror.
 
-## 🚀 Getting Started
+## Setup
 
-### Prerequisites
+### 1. Database — start from empty
 
-- Node.js 18+ 
-- npm or yarn
-- Supabase account
-- OpenAI API key
+You have two options:
 
-### Installation
+- **New Supabase project (cleanest).** Create one, open the SQL editor and run [`db/schema.sql`](db/schema.sql).
+- **Reuse the old project.** Run [`db/drop_legacy.sql`](db/drop_legacy.sql) first. This **permanently deletes** all v1 tables and data (users, quiz attempts, flashcards…). Then run [`db/schema.sql`](db/schema.sql).
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/prep-js.git
-   cd prep-js
-   ```
+`schema.sql` enables the `vector` extension, creates the tables and similarity-search functions, and enables RLS with no policies. That means the public anon key can't read anything. The app only talks to the database from the server, using the service-role key.
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+Later, to wipe your progress and start again at Day 1, use **Settings → Danger zone** in the app, or run [`db/reset.sql`](db/reset.sql).
 
-3. **Set up environment variables**
-   
-   Copy `.env.example` to `.env.local` and fill in your credentials:
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   OPENAI_API_KEY=your_openai_api_key
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   ```
+### 2. Environment
 
-4. **Set up the database**
-   
-   Go to your Supabase project's SQL Editor and run the contents of `supabase-schema.sql`.
-   
-   The default access key is `prepjs2024`. You can change this by:
-   ```javascript
-   const bcrypt = require('bcryptjs');
-   const hash = bcrypt.hashSync('your-secret-key', 10);
-   console.log(hash);
-   ```
-   Then update the `access_key` in the `users` table.
-
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open the app**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-## 📁 Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   │   ├── auth/          # Authentication endpoints
-│   │   ├── quiz/          # Quiz generation & submission
-│   │   └── user/          # User stats & achievements
-│   ├── analytics/         # Analytics page
-│   ├── dashboard/         # Dashboard page
-│   ├── login/             # Login page
-│   ├── profile/           # Profile page
-│   └── quiz/              # Quiz pages
-├── components/            # React components
-│   ├── analytics/         # Analytics components
-│   ├── auth/              # Authentication components
-│   ├── layout/            # Layout components (Navbar, etc.)
-│   ├── quiz/              # Quiz components
-│   └── ui/                # Reusable UI components
-├── lib/                   # Utility functions
-│   ├── quiz.ts           # Quiz logic & OpenAI integration
-│   ├── store.ts          # Zustand state management
-│   ├── supabase-client.ts # Browser Supabase client
-│   └── supabase-server.ts # Server Supabase client
-└── types/                 # TypeScript type definitions
+```bash
+cp .env.example .env.local
 ```
 
-## 🎯 JavaScript Topics Covered
+| Variable | What it is |
+| --- | --- |
+| `SUPABASE_URL` | Project URL (Settings → API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key. **Server only**, never prefix with `NEXT_PUBLIC_` |
+| `OPENAI_API_KEY` | Your OpenAI key |
+| `OPENAI_MODEL` | Writes questions and challenges (default `gpt-5`) |
+| `OPENAI_FAST_MODEL` | Grades answers (default `gpt-5-mini`) |
+| `OPENAI_EMBEDDING_MODEL` | Default `text-embedding-3-small` (1536 dims, must match the schema) |
+| `APP_PASSWORD` | The single password that unlocks the app |
+| `AUTH_SECRET` | ≥ 32 random chars for signing the session cookie: `openssl rand -base64 48` |
+| `APP_TIMEZONE` | IANA zone where your day rolls over, e.g. `Asia/Kolkata` |
 
-1. Closures
-2. Hoisting
-3. The `this` Keyword
-4. Type Coercion
-5. Prototypes and Inheritance
-6. Event Loop and Asynchronous Execution
-7. Scope (Lexical vs Block)
-8. Equality Operators (`==` vs `===`)
-9. Arrow Functions
-10. Truthy/Falsy Values
-11. Operator Precedence and Associativity
-12. Array and Object Behaviors
-13. IIFEs (Immediately Invoked Function Expressions)
-14. Promises and Async/Await
-15. Strict Mode
+### 3. Run
 
-## 🏆 Achievements
+```bash
+npm install
+npm run dev
+```
 
-- **Perfect Score**: Score 10/10 on any quiz
-- **Speed Demon**: Complete a quiz under 10 minutes with >80%
-- **Week Warrior**: Maintain a 7-day streak
-- **Month Master**: Maintain a 30-day streak
-- **Century Champion**: Maintain a 100-day streak
-- And more!
+The first visit each day generates the drill and the arena challenges. That takes about a minute and starts in the background as soon as you open the dashboard.
 
-## 📊 Progressive Difficulty
+## How it works
 
-| Days | Easy | Medium | Hard |
-|------|------|--------|------|
-| 1-7  | 5    | 3      | 2    |
-| 8-14 | 2    | 4      | 4    |
-| 15+  | 1    | 2      | 7    |
+```
+Today ─┬─ scheduler (src/lib/engine/scheduler.ts)
+       │    due reviews (most overdue first) + new concepts (capped working set) + 1 stretch
+       │    → per slot: concept, format (never the same as last time), difficulty, known misconceptions
+       │
+       ├─ generator (src/lib/engine/questions.ts)
+       │    one OpenAI call per track, in parallel, with a "previously asked" list per concept
+       │    → shape checks → execute JS/Node output questions in a sandbox → embed
+       │    → reject anything with cosine ≥ 0.92 to any past question (pgvector) → regenerate once
+       │
+       ├─ grader (src/lib/engine/grade.ts)
+       │    MCQ + exact outputs checked locally; everything else graded by the fast model
+       │    → verdict, feedback and the underlying misconception
+       │
+       └─ progress: Leitner boxes 0–6, reviews at 1 → 2 → 4 → 7 → 14 → 30 → 60 days, box ≥ 4 = mastered
+```
 
-## 🛠️ Tech Stack
+The curriculum lives in [`src/data/curriculum.ts`](src/data/curriculum.ts): 158 granular concepts across 5 tracks and 5 tiers. Add, remove or edit concepts freely. The `focus` text is what the question writer targets.
 
-- **Framework**: Next.js 16 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS 4
-- **Database**: Supabase (PostgreSQL)
-- **AI**: OpenAI GPT-4
-- **State Management**: Zustand
-- **Charts**: Recharts
-- **Icons**: Lucide React
-- **Syntax Highlighting**: Prism.js
+Code execution uses `node:vm` inside a short-lived worker thread with a timeout and memory limit. It isolates crashes and infinite loops, but `vm` is **not a security sandbox**. That's acceptable here because the only code it runs is code the app generated for you, plus your own submissions, behind your password.
 
-## 📱 Screenshots
+## Deploying
 
-The app includes:
-- **Login Page**: Secure access key authentication
-- **Dashboard**: Overview of stats, recent quizzes, and quick actions
-- **Quiz Page**: Timed questions with syntax-highlighted code
-- **Results Page**: Detailed breakdown with explanations
-- **Analytics Page**: Charts and topic performance analysis
-- **Profile Page**: User stats and account actions
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy!
-
-### Environment Variables for Production
-
-Make sure to set these in your deployment platform:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `OPENAI_API_KEY`
-- `NEXT_PUBLIC_APP_URL`
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Support
-
-If you have any questions or issues, please open an issue on GitHub.
+Works on Vercel. Set the environment variables above. Generation routes declare `maxDuration = 300`.

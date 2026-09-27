@@ -1,185 +1,205 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --raised: #efefeb;
+  --line: #e2e2dc;
+  --line-strong: #cfcfc7;
+  --fg: #16161a;
+  --muted: #5d5d66;
+  --faint: #8e8e96;
+
+  --accent: #e8542a;
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
+  --accent-fg: #ffffff;
+
+  --good: #178a57;
+  --bad: #d23b3f;
+  --warn: #b7791f;
+
+  --track-js: #b8960b;
+  --track-node: #4b8f2f;
+  --track-mongo: #0f8f76;
+  --track-react: #0a86b8;
+  --track-next: #7550d8;
+
+  --code-bg: #f3f3ef;
+  --code-fg: #24242b;
+  --code-comment: #8b8b93;
+  --code-keyword: #b3372b;
+  --code-string: #3c7a2a;
+  --code-number: #7a4fc9;
+  --code-function: #0e6fa3;
+  --code-punct: #5b5b63;
+  --code-prop: #9c5a00;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --bg: #0b0b0d;
+  --surface: #131316;
+  --raised: #1b1b1f;
+  --line: #25252b;
+  --line-strong: #34343c;
+  --fg: #ececef;
+  --muted: #a0a0aa;
+  --faint: #6b6b75;
+
+  --accent: #ff6a3d;
+  --accent-fg: #140803;
+
+  --good: #3ecf8e;
+  --bad: #ff5d62;
+  --warn: #f5b041;
+
+  --track-js: #f2d94e;
+  --track-node: #7ccf5b;
+  --track-mongo: #34d1b0;
+  --track-react: #61dafb;
+  --track-next: #a78bfa;
+
+  --code-bg: #0f0f12;
+  --code-fg: #e4e4ea;
+  --code-comment: #6e6e7a;
+  --code-keyword: #ff7a90;
+  --code-string: #a5e07a;
+  --code-number: #c4a7ff;
+  --code-function: #7cc8ff;
+  --code-punct: #9a9aa6;
+  --code-prop: #ffc56b;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.25);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+  --color-code: var(--code-bg);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --shadow-card: var(--shadow);
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Prism.js syntax highlighting theme */
-code[class*="language-"],
-pre[class*="language-"] {
-  color: #f8f8f2;
-  background: none;
-  text-shadow: 0 1px rgba(0, 0, 0, 0.3);
-  font-family: var(--font-geist-mono), Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 0.875rem;
-  text-align: left;
-  white-space: pre;
-  word-spacing: normal;
-  word-break: normal;
-  word-wrap: normal;
-  line-height: 1.5;
-  tab-size: 4;
-  hyphens: none;
+::selection {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
 }
 
-pre[class*="language-"] {
-  padding: 1rem;
-  margin: 0;
-  overflow: auto;
-  border-radius: 0.5rem;
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-:not(pre) > code[class*="language-"] {
-  padding: 0.1em 0.3em;
-  border-radius: 0.3em;
-  white-space: normal;
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
-.token.comment,
-.token.prolog,
-.token.doctype,
-.token.cdata {
-  color: #6272a4;
+/* ── Markdown (explanations, challenge statements) ──────────────────────── */
+
+.prose-app {
+  line-height: 1.65;
+  color: var(--fg);
+}
+.prose-app > * + * {
+  margin-top: 0.75em;
+}
+.prose-app h1,
+.prose-app h2,
+.prose-app h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 1.25em;
+}
+.prose-app h1 { font-size: 1.15rem; }
+.prose-app h2 { font-size: 1.05rem; }
+.prose-app h3 { font-size: 0.95rem; }
+.prose-app ul { list-style: disc; padding-left: 1.25rem; }
+.prose-app ol { list-style: decimal; padding-left: 1.25rem; }
+.prose-app li + li { margin-top: 0.25em; }
+.prose-app a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.prose-app strong { font-weight: 600; }
+.prose-app :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.08em 0.35em;
+}
+.prose-app pre {
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+}
+.prose-app table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+.prose-app th,
+.prose-app td { border: 1px solid var(--line); padding: 0.35rem 0.6rem; text-align: left; }
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-rise {
+  animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-.token.punctuation {
-  color: #f8f8f2;
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--raised) 25%, var(--line) 50%, var(--raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
 }
 
-.token.namespace {
-  opacity: 0.7;
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise, .skeleton { animation: none; }
 }
 
-.token.property,
-.token.tag,
-.token.constant,
-.token.symbol,
-.token.deleted {
-  color: #ff79c6;
-}
-
-.token.boolean,
-.token.number {
-  color: #bd93f9;
-}
-
-.token.selector,
-.token.attr-name,
-.token.string,
-.token.char,
-.token.builtin,
-.token.inserted {
-  color: #50fa7b;
-}
-
-.token.operator,
-.token.entity,
-.token.url,
-.language-css .token.string,
-.style .token.string,
-.token.variable {
-  color: #f8f8f2;
-}
-
-.token.atrule,
-.token.attr-value,
-.token.function,
-.token.class-name {
-  color: #f1fa8c;
-}
-
-.token.keyword {
-  color: #ff79c6;
-}
-
-.token.regex,
-.token.important {
-  color: #ffb86c;
-}
-
-.token.important,
-.token.bold {
-  font-weight: bold;
-}
-
-.token.italic {
-  font-style: italic;
-}
-
-.token.entity {
-  cursor: help;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-/* Animation keyframes */
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(-25%);
-    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-  }
-  50% {
-    transform: translateY(0);
-    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-  }
-}
-
-.animate-bounce {
-  animation: bounce 1s infinite;
-}
+/* CodeMirror fills its container */
+.cm-editor { height: 100%; font-size: 13.5px; }
+.cm-editor .cm-scroller { font-family: var(--font-mono); line-height: 1.6; }
+.cm-editor.cm-focused { outline: none; }
