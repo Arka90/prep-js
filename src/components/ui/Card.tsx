@@ -1,49 +1,14 @@
-'use client';
+import type { HTMLAttributes } from "react";
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
+export function Card({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={`rounded-2xl border border-line bg-surface shadow-card ${className}`} {...props} />;
 }
 
-export function Card({ children, className = '', onClick }: CardProps) {
+export function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div
-      onClick={onClick}
-      className={`
-        bg-white dark:bg-gray-800
-        rounded-xl shadow-sm
-        border border-gray-200 dark:border-gray-700
-        p-6
-        ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
-        ${className}
-      `}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function CardHeader({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`mb-4 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-export function CardTitle({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <h3 className={`text-lg font-semibold text-gray-900 dark:text-gray-100 ${className}`}>
-      {children}
-    </h3>
-  );
-}
-
-export function CardContent({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={className}>
-      {children}
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-faint">{children}</h2>
+      {action}
     </div>
   );
 }

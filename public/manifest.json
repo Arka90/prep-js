@@ -1,27 +1,10 @@
 {
-  "name": "PrepJS - JavaScript Interview Quiz",
-  "short_name": "PrepJS",
-  "description": "AI-powered JavaScript interview preparation with quizzes, progress tracking, and detailed analytics",
+  "name": "prep.js",
+  "short_name": "prep.js",
+  "description": "Daily drills, spaced repetition and a coding arena for JS, Node, MongoDB, React and Next.js.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3B82F6",
-  "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "categories": ["education", "productivity"],
-  "screenshots": [],
-  "prefer_related_applications": false
+  "background_color": "#0b0b0d",
+  "theme_color": "#0b0b0d",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }
