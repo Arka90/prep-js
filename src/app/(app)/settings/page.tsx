@@ -11,8 +11,10 @@ export default async function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="animate-rise">
-        <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">Settings</div>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Tune the training</h1>
+        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">Settings</div>
+        <h1 className="mt-3 font-display text-5xl leading-[0.95]">
+          Tune the <span className="italic text-gradient">training.</span>
+        </h1>
       </header>
       <SettingsForm
         initialCount={state.daily_question_count}

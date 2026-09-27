@@ -13,11 +13,13 @@ export const metadata: Metadata = { title: "Progress" };
 export default async function ProgressPage() {
   const data = await getProgressOverview();
   return (
-    <div className="space-y-8">
-      <header className="animate-rise">
-        <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">Day {data.dayNumber} · Progress</div>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Concept map</h1>
-        <p className="mt-2 max-w-2xl text-muted">
+    <div className="stagger space-y-8">
+      <header>
+        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">Day {data.dayNumber} · Progress</div>
+        <h1 className="mt-3 font-display text-5xl leading-[0.95] sm:text-6xl">
+          The <span className="italic text-gradient">concept map.</span>
+        </h1>
+        <p className="mt-4 max-w-2xl text-[15px] text-muted">
           A concept is mastered after four correct answers in a row, spaced 1 → 2 → 4 → 7 days apart. Any miss sends it
           back to tomorrow, asked a different way.
         </p>

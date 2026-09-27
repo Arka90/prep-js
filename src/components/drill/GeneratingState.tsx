@@ -20,9 +20,18 @@ export function GeneratingState() {
     return () => clearInterval(timer);
   }, []);
   return (
-    <Card className="mx-auto mt-6 max-w-xl p-8 animate-rise">
-      <div className="font-mono text-xs uppercase tracking-[0.14em] text-accent">Preparing today</div>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight">Building a drill nobody has asked you before</h1>
+    <Card className="relative mx-auto mt-6 max-w-xl overflow-hidden p-8 animate-rise">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full opacity-20 blur-3xl"
+        style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-2))" }}
+      />
+      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
+        <span className="size-1.5 rounded-full bg-accent pulse-dot" /> Preparing today
+      </div>
+      <h1 className="mt-3 font-display text-3xl leading-tight">
+        Building a drill <span className="italic text-gradient">nobody has asked you</span> before.
+      </h1>
       <p className="mt-2 text-sm text-muted">The first load of the day takes about a minute. It&apos;s cached after that.</p>
       <ul className="mt-6 space-y-3">
         {STEPS.map((label, i) => (

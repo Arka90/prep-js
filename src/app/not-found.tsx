@@ -4,8 +4,8 @@ export default function NotFound() {
   return (
     <div className="grid min-h-dvh place-items-center p-6 text-center">
       <div>
-        <div className="font-mono text-6xl font-semibold tracking-tight">
-          4<span className="text-accent">0</span>4
+        <div className="font-display text-8xl leading-none">
+          4<span className="italic text-gradient">0</span>4
         </div>
         <p className="mt-3 text-muted">
           <code className="font-mono text-sm">undefined</code> is not a page.

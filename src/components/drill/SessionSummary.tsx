@@ -23,9 +23,17 @@ export function SessionSummary({ questions, onReview }: { questions: DrillQuesti
 
   return (
     <div className="space-y-4 animate-rise">
-      <Card className="p-7 text-center">
-        <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">Drill complete</div>
-        <div className="mt-3 font-mono text-6xl font-semibold tracking-tight">{pct}%</div>
+      <Card className="relative overflow-hidden p-8 text-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-3xl"
+          style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-2))" }}
+        />
+        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">Drill complete</div>
+        <div className="mt-3 font-display text-8xl leading-none">
+          <span className={pct >= 80 ? "text-gradient" : ""}>{pct}</span>
+          <span className="text-3xl text-faint">%</span>
+        </div>
         <p className="mt-2 text-muted">
           {answered.filter((q) => q.result?.verdict === "correct").length} correct out of {answered.length}.{" "}
           {misses.length ? "Every miss is scheduled for tomorrow, from a different angle." : "Clean sweep. Tomorrow gets harder."}
@@ -70,7 +78,7 @@ export function SessionSummary({ questions, onReview }: { questions: DrillQuesti
 
       <Link
         href="/arena"
-        className="flex items-center justify-between rounded-2xl border border-line bg-surface p-5 transition hover:border-line-strong"
+        className="edge lift flex items-center justify-between rounded-2xl p-5"
       >
         <span className="flex items-center gap-3">
           <Swords className="size-5 text-accent" />
