@@ -113,9 +113,10 @@ export function DrillRunner() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">Day {dayNumber} · Drill</div>
-          <div className="mt-1 text-sm text-muted">
-            {questions.filter((q) => q.result).length} of {questions.length} answered
+          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">Day {dayNumber} · Drill</div>
+          <div className="mt-1 font-display text-2xl">
+            <span className="italic text-accent">{questions.filter((q) => q.result).length}</span>
+            <span className="text-faint"> / {questions.length}</span> answered
           </div>
         </div>
         {questions.every((q) => q.result) && !showSummary && (

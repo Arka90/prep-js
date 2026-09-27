@@ -12,8 +12,10 @@ export function SetupNotice({ message }: { message: string }) {
   return (
     <div className="grid min-h-dvh place-items-center p-6">
       <Card className="w-full max-w-xl p-8">
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">Setup needed</div>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">prep.js can&apos;t reach its database yet</h1>
+        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent">Setup needed</div>
+        <h1 className="mt-3 font-display text-3xl leading-tight">
+          prep.js can&apos;t reach its <span className="italic text-gradient">database</span> yet.
+        </h1>
         <pre className="mt-4 whitespace-pre-wrap rounded-lg border border-bad/30 bg-bad/10 p-3 font-mono text-xs text-bad">
           {message}
         </pre>

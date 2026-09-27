@@ -71,8 +71,13 @@ export function QuestionView(props: {
   });
 
   return (
-    <div className="space-y-4 animate-rise">
-      <Card className="p-5 sm:p-7">
+    <div className="space-y-4 animate-rise" data-mcq-open={q.kind === "mcq" && !answered ? "" : undefined}>
+      <Card className="relative overflow-hidden p-5 sm:p-7">
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[3px]"
+          style={{ background: `linear-gradient(90deg, ${TRACK_META[q.track].color}, transparent 70%)` }}
+        />
         <div className="flex flex-wrap items-center gap-2">
           <TrackBadge track={q.track} />
           <Pill tone={q.mode === "new" ? "accent" : q.mode === "stretch" ? "warn" : "neutral"}>{MODE_LABEL[q.mode]}</Pill>
@@ -80,17 +85,16 @@ export function QuestionView(props: {
             <DifficultyDots level={q.difficulty} />
           </span>
         </div>
-        <div className="mt-4 flex items-baseline gap-3">
-          <span className="font-mono text-sm text-faint">
-            {String(props.position).padStart(2, "0")}/{String(props.total).padStart(2, "0")}
+        <div className="mt-5 flex items-baseline gap-3">
+          <span className="font-display text-2xl italic text-faint">
+            {String(props.position).padStart(2, "0")}
+            <span className="not-italic text-line-strong">/{String(props.total).padStart(2, "0")}</span>
           </span>
-          <div className="min-w-0">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted">
-              {KIND_LABEL[q.kind]} · {q.conceptName}
-            </div>
+          <div className="min-w-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+            {KIND_LABEL[q.kind]} <span className="text-faint">·</span> {q.conceptName}
           </div>
         </div>
-        <Markdown className="mt-3 text-[16px] font-medium leading-relaxed">{q.prompt}</Markdown>
+        <Markdown className="mt-3 text-[17px] font-medium leading-relaxed">{q.prompt}</Markdown>
         {q.code && <CodeBlock code={q.code} language={TRACK_META[q.track].language} className="mt-5" />}
 
         {q.kind === "mcq" && q.options ? (
@@ -142,7 +146,7 @@ export function QuestionView(props: {
             placeholder={PLACEHOLDER[q.kind]}
             rows={q.kind === "predict_output" ? 5 : 6}
             spellCheck={q.kind !== "predict_output"}
-            className={`mt-6 w-full resize-y rounded-xl border border-line bg-bg p-4 text-[14.5px] outline-none transition placeholder:text-faint focus:border-accent ${
+            className={`mt-6 w-full resize-y rounded-xl border border-line bg-bg-deep/60 p-4 text-[14.5px] outline-none transition placeholder:text-faint focus:border-accent focus:shadow-[0_0_0_4px_var(--accent-soft)] ${
               q.kind === "predict_output" ? "font-mono" : ""
             }`}
           />
@@ -183,9 +187,9 @@ export function QuestionView(props: {
 }
 
 const VERDICT = {
-  correct: { title: "Correct", tone: "text-good", ring: "border-good/40", icon: Check },
-  partial: { title: "Partly there", tone: "text-warn", ring: "border-warn/40", icon: RefreshCw },
-  wrong: { title: "Not quite", tone: "text-bad", ring: "border-bad/40", icon: X },
+  correct: { title: "Correct", tone: "text-good", ring: "border-good/40 shadow-[0_0_0_1px_var(--good),0_20px_60px_-30px_var(--good)]", icon: Check },
+  partial: { title: "Partly there", tone: "text-warn", ring: "border-warn/40 shadow-[0_0_0_1px_var(--warn),0_20px_60px_-30px_var(--warn)]", icon: RefreshCw },
+  wrong: { title: "Not quite", tone: "text-bad", ring: "border-bad/40 shadow-[0_0_0_1px_var(--bad),0_20px_60px_-30px_var(--bad)]", icon: X },
 } as const;
 
 function Feedback({
@@ -205,9 +209,11 @@ function Feedback({
   const showAnswers = question.kind !== "mcq";
   return (
     <Card className={`border p-5 sm:p-7 animate-rise ${v.ring}`}>
-      <div className="flex items-center gap-2">
-        <v.icon className={`size-5 ${v.tone}`} />
-        <h3 className={`text-lg font-semibold ${v.tone}`}>{v.title}</h3>
+      <div className="flex items-center gap-2.5">
+        <span className={`grid size-8 place-items-center rounded-full bg-current/10 ${v.tone}`}>
+          <v.icon className="size-4" />
+        </span>
+        <h3 className={`font-display text-2xl italic ${v.tone}`}>{v.title}</h3>
         {result.verified && (
           <span className="ml-auto flex items-center gap-1 text-xs text-faint" title="The expected output was produced by actually running this code">
             <ShieldCheck className="size-3.5 text-good" /> output verified by execution

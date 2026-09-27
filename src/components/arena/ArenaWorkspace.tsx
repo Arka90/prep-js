@@ -126,7 +126,7 @@ export function ArenaWorkspace({ challenge: initial }: { challenge: PublicChalle
         <span className="grid size-8 place-items-center rounded-lg bg-raised text-muted">
           {challenge.kind === "build" ? <Hammer className="size-4" /> : <Bug className="size-4" />}
         </span>
-        <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight">{challenge.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate font-display text-2xl">{challenge.title}</h1>
         <TrackBadge track={challenge.track} />
         <DifficultyDots level={challenge.difficulty} />
         {challenge.status === "solved" && (
@@ -141,7 +141,8 @@ export function ArenaWorkspace({ challenge: initial }: { challenge: PublicChalle
         {/* Problem */}
         <div className="space-y-4 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:pr-1">
           <Card className="p-5">
-            <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+            <div className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-faint">
+              <span className="size-1 rounded-full bg-accent" />
               {challenge.kind === "build" ? "Build it" : "Fix the bug"}
             </div>
             <Markdown>{challenge.description}</Markdown>
@@ -201,8 +202,13 @@ export function ArenaWorkspace({ challenge: initial }: { challenge: PublicChalle
         </div>
 
         {/* Editor + results */}
-        <div className="flex min-h-[70dvh] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card lg:h-[calc(100dvh-8rem)]">
-          <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+        <div className="edge flex min-h-[70dvh] flex-col overflow-hidden rounded-2xl lg:h-[calc(100dvh-8rem)]">
+          <div className="flex items-center gap-2 border-b border-line bg-raised/50 px-3 py-2">
+            <span className="mr-1 flex gap-1.5" aria-hidden>
+              <span className="size-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="size-2.5 rounded-full bg-[#febc2e]" />
+              <span className="size-2.5 rounded-full bg-[#28c840]" />
+            </span>
             <span className="font-mono text-xs text-faint">solution.js</span>
             <div className="ml-auto flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={reset} title="Reset to starter code">

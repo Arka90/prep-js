@@ -21,7 +21,7 @@ export function ConceptMap({ tracks }: { tracks: TrackData[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
+      <div className="glass flex gap-1 overflow-x-auto rounded-xl p-1">
         {tracks.map((t) => (
           <button
             key={t.track}
@@ -30,7 +30,7 @@ export function ConceptMap({ tracks }: { tracks: TrackData[] }) {
               setSelected(null);
             }}
             className={`flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-sm transition ${
-              t.track === active ? "bg-raised font-medium text-fg" : "text-muted hover:text-fg"
+              t.track === active ? "bg-surface-solid font-medium text-fg shadow-card" : "text-muted hover:text-fg"
             } ${t.enabled ? "" : "opacity-50"}`}
           >
             <span className="size-2 rounded-full" style={{ background: TRACK_META[t.track].color }} />

@@ -32,11 +32,13 @@ export default async function ArenaPage() {
   const missing = today.length < 2;
 
   return (
-    <div className="space-y-8">
-      <header className="animate-rise">
-        <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">Day {ctx.dayNumber} · Arena</div>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Write it yourself.</h1>
-        <p className="mt-2 max-w-2xl text-muted">
+    <div className="stagger space-y-8">
+      <header>
+        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-faint">Day {ctx.dayNumber} · Arena</div>
+        <h1 className="mt-3 font-display text-5xl leading-[0.95] sm:text-6xl">
+          Write it <span className="italic text-gradient">yourself.</span>
+        </h1>
+        <p className="mt-4 max-w-2xl text-[15px] text-muted">
           One build and one debug challenge a day. No autocomplete, no AI — just you, the problem and the tests. Every
           test was checked against a reference solution before you got it.
         </p>
@@ -47,9 +49,17 @@ export default async function ArenaPage() {
       <div className="grid gap-4 md:grid-cols-2">
         {today.map((c) => (
           <Link key={c.id} href={`/arena/${c.id}`} className="group">
-            <Card className="flex h-full flex-col p-6 transition group-hover:border-line-strong">
+            <Card className="relative flex h-full flex-col overflow-hidden p-6" hover>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full opacity-[0.15] blur-3xl"
+                style={{ background: TRACK_META[c.track].color }}
+              />
               <div className="flex items-center gap-2">
-                <span className="grid size-9 place-items-center rounded-lg bg-raised text-accent">
+                <span
+                  className="grid size-10 place-items-center rounded-xl"
+                  style={{ background: `color-mix(in oklab, ${TRACK_META[c.track].color} 18%, transparent)`, color: TRACK_META[c.track].color }}
+                >
                   {c.kind === "build" ? <Hammer className="size-4" /> : <Bug className="size-4" />}
                 </span>
                 <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
@@ -59,7 +69,7 @@ export default async function ArenaPage() {
                   <DifficultyDots level={c.difficulty} />
                 </span>
               </div>
-              <h2 className="mt-4 text-xl font-semibold tracking-tight">{c.title}</h2>
+              <h2 className="mt-5 font-display text-3xl leading-tight">{c.title}</h2>
               <p className="mt-2 line-clamp-3 text-sm text-muted">
                 {c.description.replace(/[#*`>_]/g, "").replace(/\s+/g, " ").slice(0, 220)}
               </p>
